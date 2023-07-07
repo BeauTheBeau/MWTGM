@@ -1,7 +1,7 @@
 {
-  "name": "MWT GameNights Bot",
+  "name": "mwt-gamenights-bot",
   "version": "1.0.0",
-  "description": "This is a Discord bot the the MWT GameNights server.",
+  "description": "This is a Discord bot for the MWT Game Nights server.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,6 +17,7 @@
     "chalk": "^4.1.2",
     "discord-api-types": "^0.37.43",
     "discord.js": "^14.11.0",
+    "dotenv": "^16.3.1",
     "mongoose": "^7.2.3",
     "node-fetch": "^3.2.6"
   }
