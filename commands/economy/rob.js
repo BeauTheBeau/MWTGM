@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
-const cooldownSchema = require('../../models/robCooldown.js')
+const userModel = require("../../models/userModel.js");
+const cooldownSchema = require('../../models/robCooldownModel.js')
 
 module.exports = {
     data: new SlashCommandBuilder()

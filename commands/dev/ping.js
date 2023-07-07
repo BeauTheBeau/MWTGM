@@ -12,7 +12,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setTitle("***Ping***")
-      .setDescription(`**API Latency:** ${client.ws.ping}\n**Client Ping:** ${clientPing}`)
+      .setDescription(`**API Latency:** ${client.ws.ping}ms\n**Client Ping:** ${clientPing}ms`)
       .setColor("Yellow");
 
     await interaction.editReply({ embeds: [embed] });

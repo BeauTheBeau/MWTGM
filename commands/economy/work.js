@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
-const cooldownSchema = require('../../models/workCooldown.js')
+const userModel = require("../../models/userModel.js");
+const cooldownSchema = require('../../models/workCooldownModel.js')
 
 const workTexts = [
     "working as a housewife",

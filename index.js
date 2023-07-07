@@ -5,11 +5,11 @@ const process = require(`node:process`);
 
 const fs = require('fs');
 const mongoose = require(`mongoose`);
-const userModel = require("./models/user.js");
-const token = process.env.token
-const mongoURI = process.env.mongodb
+const userModel = require("./models/userModel.js");
+const token = process.env.TOKEN
+const mongoURI = process.env.MONGO_URI
 
-const client = new Client({
+export const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
@@ -25,8 +25,14 @@ for (const folder of functionFolders) {
     const functionFolders = fs
         .readdirSync(`./functions/${folder}`)
         .filter((file) => file.endsWith(".js"));
-    for (const file of functionFolders)
-        require(`./functions/${folder}/${file}`)(client);
+    for (const file of functionFolders) {
+        try {
+
+            require(`./functions/${folder}/${file}`)(client);
+        } catch (err) {
+            console.error(err.stack);
+        }
+    }
 }
 
 client.buttons = new Collection();

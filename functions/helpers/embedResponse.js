@@ -72,4 +72,4 @@ function infoReply(interaction, message, title = ":blue_circle: Info") {
     return replyWithEmbed(interaction, message, "#0000ff", title);
 }
 
-module.exports = {successReply, warningReply, errorReply, infoReply}
+module.exports = { replyWithEmbed }
