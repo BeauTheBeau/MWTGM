@@ -4,7 +4,7 @@ const fs = require("fs");
 const ascii = require("ascii-table");
 const chalk = require('chalk')
 const table = new ascii().setHeading("Commands", "Status");
-const Token = process.env['TOKEN']
+const Token = process.env.token
 
 module.exports = (client) => {
     client.handleCommands = async () => {
