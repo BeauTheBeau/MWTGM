@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const userModel = require("../../models/user.js");
-const cooldowns = {}
+const cooldownSchema = require('../../models/workCooldown.js')
 
 const workTexts = [
     "working as a housewife",
@@ -17,12 +17,21 @@ module.exports = {
         .setDMPermission(false),
 
     async execute(interaction, client) {
-        const { options } = interaction;
-        const user = interaction.user;
+        const { user } = interaction;
         let userData;
+        let cooldownTime =  8 * 60 * 60 * 1000;
 
+        const cooldownData = await cooldownSchema.findOne({ userID: user.id,  command: 'work' });
+
+        if (cooldownData && Date.now() < cooldownData.cooldownEnd) {
+            const remainingMilliseconds = cooldownData.cooldownEnd - Date.now()
+            const remainingTimeUnix = Math.floor((Date.now() + remainingMilliseconds) / 1000);
+            const cooldownEmbed = new EmbedBuilder()
+                .setColor(`Red`)
+                .setDescription(`:warning: ***You are on cooldown, the cooldown will end <t:${remainingTimeUnix}:R>***`)
+            return interaction.reply({embeds: [cooldownEmbed], ephemeral: true});
+        }
         try {
-
             userData = await userModel.findOne({ userID: user.id });
 
             if (!userData) {
@@ -66,9 +75,26 @@ module.exports = {
             .setDescription(`***You have earned 💰${num} for ${workMessage} now you have 💰${userData.cash} in cash***`)
             .setColor(`Green`)
 
-        return interaction.reply({
-            embeds: [embed], ephemeral: false
-        })
+        interaction.reply({
+            embeds: [embed]
+        });
 
+        const cooldownEnd = Date.now() + cooldownTime;
+
+        if (cooldownData) {
+            cooldownData.cooldownEnd = cooldownEnd
+            await cooldownSchema.save()
+        } else {
+            const newCooldownData = new cooldownSchema({
+                userID: user.id,
+                command: 'work',
+                cooldownStart: Date.now(),
+                cooldownEnd: cooldownEnd
+            }).save();
+        }
+
+        setTimeout(async () => {
+            await cooldownSchema.deleteOne({userID: user.id})
+        }, cooldownTime);
     }
 }
