@@ -9,7 +9,7 @@ const {EmbedBuilder} = require("discord.js");
  * @description Replies to Discord interaction with an embedded message
  * @param {Interaction} interaction - The interaction to which the program should reply
  * @param {String} message - The message that should appear in the embed
- * @param {String} color - A color for the embed in hexadecimal format
+ * @param color - The color of the embed
  * @param {String} title - The title of the embed
  * @returns {Promise<Message>|Promise<Message[]>} - The sent Message(s), reply or followup, Promise will reject if the
  * interaction has already been replied or deferred
