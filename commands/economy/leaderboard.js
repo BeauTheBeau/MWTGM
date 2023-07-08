@@ -15,7 +15,7 @@ module.exports = {
                 {name: "bank", value: "bank"}
             )
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {options, guild} = interaction;
         const sortOption = options.getString("type") || "bank";
         let results, leaderboard, i = 0;
