@@ -1,4 +1,4 @@
-const { ActivityType, EmbedBuilder } = require("discord.js");
+const { ActivityType, Client } = require("discord.js");
 
 module.exports = {
     name: "ready",
@@ -9,11 +9,11 @@ module.exports = {
         const statusArray = [
             {
                 type: ActivityType.Playing,
-                content: "Gamenights",
+                content: "game nights",
             },
             {
                 type: ActivityType.Watching,
-                content: "Factions around MWT",
+                content: "factions in MWT",
             },
             {
                 type: ActivityType.Watching,
@@ -23,7 +23,7 @@ module.exports = {
 
         async function pickPresence() {
             const option = Math.floor(Math.random() * statusArray.length);
-            client.user.setStatus("idle");
+            client.user.setStatus("online");
             try {
                 await client.user.setPresence({
                     activities: [
