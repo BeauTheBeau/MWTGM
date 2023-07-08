@@ -11,7 +11,7 @@ module.exports = {
             .setName("amount")
             .setDescription("Defaults to all, number of mouney you want to deposit")
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {user} = interaction;
         let userData, amount;
 
