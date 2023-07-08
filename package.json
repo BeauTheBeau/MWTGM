@@ -1,0 +1,24 @@
+{
+  "name": "mwt-gamenights-bot",
+  "version": "1.0.0",
+  "description": "This is a Discord bot for the MWT Game Nights server.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "main": "node index.js"
+  },
+  "keywords": [],
+  "author": "BeauTheBeau and Arnav",
+  "license": "GNU GPL v3",
+  "dependencies": {
+    "@discordjs/builders": "^1.6.3",
+    "@discordjs/rest": "^1.7.1",
+    "@types/node": "^18.0.6",
+    "ascii-table": "^0.0.9",
+    "chalk": "^4.1.2",
+    "discord-api-types": "^0.37.43",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.3.1",
+    "mongoose": "^7.2.3",
+    "node-fetch": "^3.2.6"
+  }
+}

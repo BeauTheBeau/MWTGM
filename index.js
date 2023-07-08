@@ -5,8 +5,8 @@ const fs = require('fs');
 const mongoose = require(`mongoose`);
 const userModel = require("./models/userModel.js");
 require('dotenv').config()
-const token = process.env.token
-const mongoURI = process.env.mongodb
+const token = process.env.TOKEN
+const mongoURI = process.env.MONGO_URI;
 
 const client = new Client({
     intents: [

@@ -1,11 +1,12 @@
+require('dotenv').config()
+
 const { REST } = require(`@discordjs/rest`);
 const { Routes } = require(`discord-api-types/v9`);
 const fs = require("fs");
 const ascii = require("ascii-table");
 const chalk = require('chalk')
 const table = new ascii().setHeading("Commands", "Status");
-require('dotenv').config()
-const token = process.env.token
+const token = process.env.TOKEN
 
 module.exports = (client) => {
     client.handleCommands = async () => {
@@ -27,12 +28,11 @@ module.exports = (client) => {
         }
         console.log(table.toString());
 
-        const clientId = "1117584872404426842";
-        const guildId = "1116901298239975515";
+        const clientId = process.env.CLIENT_ID
         const rest = new REST({ version: "9" }).setToken(token);
 
         try {
-            await rest.put(Routes.applicationCommands(clientId, guildId), {
+            await rest.put(Routes.applicationCommands(clientId), {
                 body: client.commandArray,
             });
             console.log(chalk.blue(`Successfully reploaded application (/) commands.`));

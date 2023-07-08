@@ -17,7 +17,7 @@ module.exports = {
             },
             {
                 type: ActivityType.Watching,
-                content: `over ${guild.memberCount} members in MWT GNs!`,
+                content: `over ${guild.memberCount} members `,
             },
         ];
 

@@ -11,7 +11,7 @@ This is a Discord bot the the MWT GameNights server.
 - [X] Users can give each other money.
 - [X] Currency can be used in Nationality and Culture channels to access random, relevant pictures.
 
-- [ ] Users can align themselves with different groups.
+- [X] Users can align themselves with different groups.
 - [ ] Groups have a joint treasury managed by elected leaders.
 - [ ] Roles based on alignment can be set with a cooldown period for changing alignment.
     
