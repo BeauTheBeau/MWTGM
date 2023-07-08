@@ -11,19 +11,27 @@ module.exports = {
             .setName('user')
             .setDescription('Select the user')
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {options} = interaction;
         const user = options.getMember('user') || interaction.user;
         let userData;
 
         try {
             userData = await userModel.findOne({userID: user.id});
-            if (!userData) return replyWithEmbed(interaction, `This user does not have a profile yet!`, `#ff0000`, `:red_circle: Error`)
+            if (!userData) return replyWithEmbed(
+                interaction, `This user does not have a profile yet!`,
+                `#ff0000`, `:red_circle: Error`
+            )
         } catch (e) {
             console.log(e.stack)
-            return replyWithEmbed(interaction, `An error occurred while trying to find this user's data.`, `#ff0000`, `:red_circle: Error`)
+            return replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        return replyWithEmbed(interaction, `**${user.username}** has :cash: **${userData.cash.toLocaleString()}** cash in hand and **${userData.bank.toLocaleString()}** in the bank.`, `#00ff00`, `:green_circle: Balance`)
+        return replyWithEmbed(interaction,
+            `**${user.username}** has :dollar: **${userData.cash.toLocaleString()}** cash in hand and :bank: `
+            + `**${userData.bank.toLocaleString()}** in the bank.`, `#00ff00`, `:green_circle: Balance`)
     }
 }
