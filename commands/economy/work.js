@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder } = require("discord.js");
+const { replyWithEmbed } = require("../../functions/helpers/embedResponse")
 const userModel = require("../../models/userModel.js");
 const cooldownSchema = require('../../models/workCooldownModel.js')
 
@@ -26,58 +27,51 @@ module.exports = {
         if (cooldownData && Date.now() < cooldownData.cooldownEnd) {
             const remainingMilliseconds = cooldownData.cooldownEnd - Date.now()
             const remainingTimeUnix = Math.floor((Date.now() + remainingMilliseconds) / 1000);
-            const cooldownEmbed = new EmbedBuilder()
-                .setColor(`Red`)
-                .setDescription(`:warning: ***You are on cooldown, the cooldown will end <t:${remainingTimeUnix}:R>***`)
-            return interaction.reply({embeds: [cooldownEmbed], ephemeral: true});
+            return await replyWithEmbed(
+                interaction, `You can work again in <t:${remainingTimeUnix}:R>`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
         try {
             userData = await userModel.findOne({ userID: user.id });
 
             if (!userData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`**:warning: You don\'t have a profile yet**`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `This user does not have a profile yet!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
 
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving your profile data",
-                ephemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
         const
             min = 100,
             max = 10000,
-            num = Math.round(Math.random() * (max - min + 1), 2);
+            num = Math.floor(Math.random() * (max - min + 1)) + min;
 
         try {
             userData.cash += num;
             await userData.save()
         } catch (e) {
             console.error(e.stack)
-            return interaction.reply({
-                content: "**:warning: Failed to add money to your balance**",
-                epemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to save this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
         const workMessage = workTexts[Math.floor(Math.random() * workTexts.length)]
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${user.username} has earned for working!`)
-            .setDescription(`***You have earned 💰${num} for ${workMessage} now you have 💰${userData.cash} in cash***`)
-            .setColor(`Green`)
-
-        interaction.reply({
-            embeds: [embed]
-        });
+        return await replyWithEmbed(
+            interaction, `You earned :dollar: **${num.toLocaleString()}** by ${workMessage}`,
+            `#00ff00`, `:green_circle: Work`
+        )
 
         const cooldownEnd = Date.now() + cooldownTime;
 
@@ -85,7 +79,7 @@ module.exports = {
             cooldownData.cooldownEnd = cooldownEnd
             await cooldownSchema.save()
         } else {
-            const newCooldownData = new cooldownSchema({
+            await new cooldownSchema({
                 userID: user.id,
                 command: 'work',
                 cooldownStart: Date.now(),

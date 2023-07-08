@@ -61,7 +61,7 @@ module.exports = {
 
         return await replyWithEmbed(
             interaction, `You have deposited :dollar: **${amount.toLocaleString()}** into your bank account.`
-            + `\n\n**${beauSplit.toLocaleString() + arnavSplit.toLocaleString() + gamerSplit.toLocaleString()}** has been split between the authorities.`,
+            + `\n\n**${(beauSplit + arnavSplit + gamerSplit).toLocaleString()}** has been split between the authorities.`,
             `#00ff00`, `:green_circle: Deposit`
         )
     }

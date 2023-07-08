@@ -59,7 +59,7 @@ module.exports = {
         } catch (e) {
             console.log(e.stack)
             return await replyWithEmbed(
-                interaction, `You can't rob from someone who doesn't have any cash!`,
+                interaction, `You can't rob from someone who doesn't have any :dollar: cash!`,
                 `#ff0000`, `:red_circle: Error`
             )
         }
@@ -74,18 +74,18 @@ module.exports = {
         } catch (e) {
             console.error(e.stack)
             return await replyWithEmbed(
-                interaction, `You can't rob from someone who doesn't have any cash!`,
+                interaction, `You can't rob from someone who doesn't have any :dollar: cash!`,
                 `#ff0000`, `:red_circle: Error`
             )
         }
 
         await replyWithEmbed(
-            interaction, `You robbed ${amount} from ${target.user.username}!`,
+            interaction, `You robbed :dollar: ${amount} from ${target.user.username}!`,
             `#00ff00`, `:white_check_mark: Success`
         )
 
         await client.channels.cache.get(`892616707820079370`).send({
-            content: `**${user.username}** robbed **${amount}** from **${target.user.username}**!`
+            content: `**${user.username}** robbed :dollar: **${amount}** from **${target.user.username}**!`
         })
 
         const cooldownEnd = Date.now() + cooldownTime;

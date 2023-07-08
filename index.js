@@ -9,7 +9,7 @@ const userModel = require("./models/userModel.js");
 const token = process.env.TOKEN
 const mongoURI = process.env.MONGO_URI
 
-export const client = new Client({
+const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
@@ -82,3 +82,5 @@ process.on('unhandledRejection', err => {
 process.on('uncaughtException', err => {
     console.log(`Unhandled exception`, err.stack);
 });
+
+module.exports = client;
