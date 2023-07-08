@@ -36,7 +36,7 @@ module.exports = {
             })
         );
 
-        leaderboard = leaderboard.filter((entry) => entry !== null).join(`\n ${i++}. `);
+        leaderboard = leaderboard.filter((entry) => entry !== null).join(`\n`);
 
         return replyWithEmbed(
             interaction, `**${sortOption === "bank" ? ":bank: Bank" : ":dollar: Cash"} Leaderboard**\n\n${leaderboard}`,

@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { replyWithEmbed } = require("../../functions/helpers/embedResponse")
+const {SlashCommandBuilder} = require("discord.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
 const userModel = require("../../models/userModel.js");
 const cooldownSchema = require('../../models/workCooldownModel.js')
 
@@ -18,11 +18,11 @@ module.exports = {
         .setDMPermission(false),
 
     async execute(interaction, client) {
-        const { user } = interaction;
+        const {user} = interaction;
         let userData;
-        let cooldownTime =  8 * 60 * 60 * 1000;
+        let cooldownTime = 8 * 60 * 60 * 1000;
 
-        const cooldownData = await cooldownSchema.findOne({ userID: user.id,  command: 'work' });
+        const cooldownData = await cooldownSchema.findOne({userID: user.id, command: 'work'});
 
         if (cooldownData && Date.now() < cooldownData.cooldownEnd) {
             const remainingMilliseconds = cooldownData.cooldownEnd - Date.now()
@@ -33,7 +33,7 @@ module.exports = {
             )
         }
         try {
-            userData = await userModel.findOne({ userID: user.id });
+            userData = await userModel.findOne({userID: user.id});
 
             if (!userData) {
                 return await replyWithEmbed(
@@ -56,7 +56,7 @@ module.exports = {
             num = Math.floor(Math.random() * (max - min + 1)) + min;
 
         try {
-            userData.cash += num;
+            userData.cash += Math.floor(num);
             await userData.save()
         } catch (e) {
             console.error(e.stack)
@@ -68,7 +68,7 @@ module.exports = {
 
         const workMessage = workTexts[Math.floor(Math.random() * workTexts.length)]
 
-        return await replyWithEmbed(
+        await replyWithEmbed(
             interaction, `You earned :dollar: **${num.toLocaleString()}** by ${workMessage}`,
             `#00ff00`, `:green_circle: Work`
         )
@@ -77,7 +77,7 @@ module.exports = {
 
         if (cooldownData) {
             cooldownData.cooldownEnd = cooldownEnd
-            await cooldownSchema.save()
+            await cooldownData.save()
         } else {
             await new cooldownSchema({
                 userID: user.id,

@@ -11,7 +11,7 @@ module.exports = {
             .setName("amount")
             .setDescription("Defaults to all, number of mouney you want to deposit")
         ),
-    async execute(interaction) {
+    async execute(interaction, client) {
         const {user} = interaction;
         let userData, amount;
 
@@ -40,6 +40,14 @@ module.exports = {
             )
         }
 
+        amount = interaction.options.getInteger("amount") || userData.cash;
+        if (amount > userData.cash || userData.cash === 0) {
+            return await replyWithEmbed(
+                interaction, `***:warning: You don't have enough money to do this.***`,
+                `#ff0000`, `:red_circle: Error`
+            )
+        }
+
         // TODO: Give splits to relevant individual
         const
             totalSplit = amount * 0.05,
@@ -48,9 +56,18 @@ module.exports = {
             gamerSplit = totalSplit - beauSplit - arnavSplit;
 
         try {
-            userData.cash -= amount;
-            userData.bank += amount - totalSplit;
-            await userData.save()
+            userData.cash -= Math.floor(amount);
+            userData.bank += Math.floor(amount - totalSplit)
+
+            const beauUser = await userModel.findOne({userID: "729567972070391848"});
+            const arnavUser = await userModel.findOne({userID: "947568482407546991"});
+            const gamerUser = await userModel.findOne({userID: "599766470490062848"});
+
+            beauUser.bank += Math.floor(beauSplit);
+            arnavUser.bank += Math.floor(arnavSplit);
+            gamerUser.bank += Math.floor(gamerSplit);
+
+            await Promise.all([userData.save(), beauUser.save(), arnavUser.save(), gamerUser.save()]);
         } catch (e) {
             console.error(e.stack)
             return await replyWithEmbed(
@@ -58,7 +75,6 @@ module.exports = {
                 `#ff0000`, `:red_circle: Error`
             )
         }
-
         return await replyWithEmbed(
             interaction, `You have deposited :dollar: **${amount.toLocaleString()}** into your bank account.`
             + `\n\n**${(beauSplit + arnavSplit + gamerSplit).toLocaleString()}** has been split between the authorities.`,
