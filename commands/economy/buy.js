@@ -17,8 +17,8 @@ module.exports = {
         .setDescription("Buy a picture")
         .setDMPermission(false),
 
-    async execute(interaction, client) {
-        const { options, user } = interaction;
+    async execute(interaction) {
+        const { user } = interaction;
         let userData;
 
         try {
