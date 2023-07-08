@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
+const {SlashCommandBuilder} = require("discord.js");
+const userModel = require("../../models/userModel.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,41 +11,27 @@ module.exports = {
             .setName('user')
             .setDescription('Select the user')
         ),
-    async execute(interaction, client) {
-        const { options } = interaction;
+    async execute(interaction) {
+        const {options} = interaction;
         const user = options.getMember('user') || interaction.user;
         let userData;
 
         try {
-            userData = await userModel.findOne({ userID: user.id });
-
-            if (!userData) {
-                const noprofile = new EmbedBuilder()
-                  .setDescription(`***:warning: ${user.username || user.user.username} doesn\'t have a profile yet***`)
-                  .setColor(`Red`)
-                return await interaction.reply({        
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
-            }
+            userData = await userModel.findOne({userID: user.id});
+            if (!userData) return replyWithEmbed(
+                interaction, `This user does not have a profile yet!`,
+                `#ff0000`, `:red_circle: Error`
+            )
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving your profile data",
-                ephemeral: true
-            })
+            return replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${user.tag || user.user.tag}'s balance`)
-            .addFields({name: `🏦 Bank`, value: `${userData.bank}`, inline: true})
-            .addFields({name: `💰 Cash`, value: `${userData.cash}`, inline: true})
-            .setColor(`Green`)
-            .setTimestamp()
-
-        return interaction.reply({
-            embeds: [embed]
-        })
-
+        return replyWithEmbed(interaction,
+            `**${user.username}** has :dollar: **${userData.cash.toLocaleString()}** cash in hand and :bank: `
+            + `**${userData.bank.toLocaleString()}** in the bank.`, `#00ff00`, `:green_circle: Balance`)
     }
 }

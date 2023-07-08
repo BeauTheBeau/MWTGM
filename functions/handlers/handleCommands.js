@@ -1,10 +1,11 @@
 const { REST } = require(`@discordjs/rest`);
 const { Routes } = require(`discord-api-types/v9`);
+const client = require(`../../index.js`);
 const fs = require("fs");
 const ascii = require("ascii-table");
 const chalk = require('chalk')
 const table = new ascii().setHeading("Commands", "Status");
-const Token = process.env['TOKEN']
+const Token = process.env.TOKEN
 
 module.exports = (client) => {
     client.handleCommands = async () => {
@@ -24,13 +25,11 @@ module.exports = (client) => {
                 commandArray.push(command.data.toJSON());
             }
         }
-        console.log(table.toString());
 
-        const clientId = "1117584872404426842";
-        const guildId = "1116901298239975515";
+        const clientId = client.user.id;
         const rest = new REST({ version: "9" }).setToken(Token);
         try {
-            await rest.put(Routes.applicationCommands(clientId, guildId), {
+            await rest.put(Routes.applicationCommands(clientId), {
                 body: client.commandArray,
             });
             console.log(chalk.blue(`Successfully reploaded application (/) commands.`));

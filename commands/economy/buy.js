@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
-
+const { SlashCommandBuilder } = require("discord.js");
+const userModel = require("../../models/userModel.js");
+const { replyWithEmbed } = require("../../functions/helpers/embedResponse")
 const shop = {
     // CHANNEL ID : [ PRICE, IMAGE ]
     "1117577834471370812": [0, `https://source.unsplash.com/featured/1920x1080/?poutine`],
@@ -17,30 +17,30 @@ module.exports = {
         .setDescription("Buy a picture")
         .setDMPermission(false),
 
-    async execute(interaction, client) {
-        const { options, user } = interaction;
+    async execute(interaction) {
+        const { user } = interaction;
         let userData;
 
         try {
             userData = await userModel.findOne({ userID: user.id });
 
-            if (!userData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: ${user.username || user.user.username} doesn\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
-            }
+            if (!userData) return await replyWithEmbed(
+                interaction, `This user does not have a profile yet!`,
+                `#ff0000`, `:red_circle: Error`
+            )
+
+            if (userData.cash < shop[interaction.channel.id][0]) return await replyWithEmbed(
+                interaction, `You do not have enough :dollar: cash to buy this picture.`,
+                `#ff0000`, `:red_circle: Error`
+            )
+
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving your profile data",
-                ephemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        if (userData.cash < shop[interaction.channel.id][0]) return interaction.reply("***:warning: You don't have enough money to buy that!***")
     }
 }

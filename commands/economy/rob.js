@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
+const {SlashCommandBuilder} = require("discord.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse");
+const userModel = require("../../models/userModel.js");
+const cooldownSchema = require('../../models/robCooldownModel.js')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,55 +14,57 @@ module.exports = {
             .setRequired(true)
         ),
     async execute(interaction, client) {
-        const { options, user } = interaction;
-        const target = interaction.options.getMember(`target`);
+        const {options, user} = interaction;
+        const target = options.getMember(`target`);
         let userData, targetData, amount;
+        let cooldownTime = 8 * 60 * 60 * 1000;
 
+        const cooldownData = await cooldownSchema.findOne({userID: user.id, command: 'rob'});
+
+        if (cooldownData && Date.now() < cooldownData.cooldownEnd) {
+            const remainingMilliseconds = cooldownData.cooldownEnd - Date.now()
+            const remainingTimeUnix = Math.floor((Date.now() + remainingMilliseconds) / 1000);
+
+            return await replyWithEmbed(
+                interaction, `You can rob again in ${remainingTimeUnix} seconds`,
+                `#ff0000`, `:red_circle: Error`
+            )
+        }
         try {
 
-            userData = await userModel.findOne({ userID: user.id });
-            targetData = await userModel.findOne({ userID: target.id });
-            
+            userData = await userModel.findOne({userID: user.id});
+            targetData = await userModel.findOne({userID: target.id});
+
             if (!userData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: You doesn\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `You don't have a profile yet!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
 
-            
             if (!targetData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: ${target.user.username} doesn\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `You can't rob from someone who doesn't have a profile!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
-            if(!targetData.cash) {
-              const nocash = new EmbedBuilder()
-                    .setDescription(`***:x: ${target.user.username} doesn\'t have any cash***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [nocash],
-                    ephemeral: true
-                })
+
+            if (!targetData.cash) {
+                return await replyWithEmbed(
+                    interaction, `You can't rob from someone who doesn't have any cash!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
-            
-            
+
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving the profile data of you or the target",
-                ephemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `You can't rob from someone who doesn't have any :dollar: cash!`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        amount = Math.round(Math.random() / 2 * targetData.cash, 2);
+        amount = Math.floor(Math.random() / 2 * targetData.cash);
 
         try {
             targetData.cash -= amount;
@@ -69,21 +73,37 @@ module.exports = {
             await targetData.save()
         } catch (e) {
             console.error(e.stack)
-            return interaction.reply({
-                content: "**:warning: Failed to save balance.**",
-                epemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `You can't rob from someone who doesn't have any :dollar: cash!`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${user.username} stole from ${target.user.username}`)
-            .setDescription(`***you have stole ${amount} of cash💰 from ${target.user.username}.***`)
-            .setColor(`Green`)
-            .setTimestamp()
+        await replyWithEmbed(
+            interaction, `You robbed :dollar: ${amount} from ${target.user.username}!`,
+            `#00ff00`, `:white_check_mark: Success`
+        )
 
-        return interaction.reply({
-            content: `<@${target.id}>!`,
-            embeds: [embed]
+        await client.channels.cache.get(`892616707820079370`).send({
+            content: `**${user.username}** robbed :dollar: **${amount}** from **${target.user.username}**!`
         })
+
+        const cooldownEnd = Date.now() + cooldownTime;
+
+        if (cooldownData) {
+            cooldownData.cooldownEnd = cooldownEnd
+            await cooldownSchema.save()
+        } else {
+            await new cooldownSchema({
+                userID: user.id,
+                command: 'rob',
+                cooldownStart: Date.now(),
+                cooldownEnd: cooldownEnd
+            }).save();
+        }
+
+        setTimeout(async () => {
+            await cooldownSchema.deleteOne({userID: user.id})
+        }, cooldownTime);
     }
 }

@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const userModel = require("../../models/user.js");
+const { SlashCommandBuilder } = require("discord.js");
+const { replyWithEmbed } = require("../../functions/helpers/embedResponse");
+const userModel = require("../../models/userModel.js");
+const repl = require("repl");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,60 +19,68 @@ module.exports = {
             .setRequired(true)
         ),
 
-    /* DOCUMENTATION
+    /** DOCUMENTATION
       * ==========================================================
       * Arnav: best command for people who don't have money to give 5% tax
+      *
       * Beau: I LOVE TAXES
+      *
       * Arnav: SAME! (TAKES SCREENSHOT)
+      *
       * Beau: (ALSO TAKES SCSREENSHOT)
-      * ==========================================================
+      *
+      *
+      * # =========================
+
       * DOCUMENTATION END */
-    async execute(interaction, client) {
+
+    async execute(interaction) {
         const { options, user } = interaction;
         const target = interaction.options.getMember(`target`);
         let userData, targetData, amount;
 
         try {
-            const younotallowed = new EmbedBuilder()
-              .setDescription(`***:warning: You cannot donate cash to yourself***`)
-              .setColor(`Red`)
-            if(target.id === interaction.user.id) return interaction.reply({embeds: [younotallowed], ephemeral: true})
+
+            if (target.id === user.id) {
+                return await replyWithEmbed(
+                    interaction, `You can't donate to yourself!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
+            }
 
             userData = await userModel.findOne({ userID: user.id });
             targetData = await userModel.findOne({ userID: target.id });
 
             if (!userData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: You don\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `You don't have a profile yet!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
 
-
             if (!targetData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: ${target.user.username} doesn\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `This user does not have a profile yet!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
 
 
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving the profile data of you or the target",
-                ephemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
         amount = options.getInteger("amount");
-        if (!userData.cash) return interaction.reply("***:warning: You don't have enough money to giveaway!***")
+        if (!userData.cash) {
+            return await replyWithEmbed(
+                interaction, `You do not have enough cash to donate that amount!`,
+                `#ff0000`, `:red_circle: Error`
+            )
+        }
 
         try {
             userData.cash -= amount;
@@ -79,21 +89,15 @@ module.exports = {
             await targetData.save()
         } catch (e) {
             console.error(e.stack)
-            return interaction.reply({
-                content: "***:warning: Failed to save balance.***",
-                epemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to save this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${user.username} donated to ${target.user.username}`)
-            .setDescription(`***Donated ${amount} to <@${target.user.id}>.***`)
-            .setColor(`Green`)
-            .setTimestamp()
-
-        return interaction.reply({
-            content: `<@${target.id}>!`,
-            embeds: [embed]
-        })
+        return await replyWithEmbed(
+            interaction, `You have donated ${amount} to ${target.user.username}!`,
+            `#00ff00`, `:white_check_mark: Success`
+        )
     }
 }

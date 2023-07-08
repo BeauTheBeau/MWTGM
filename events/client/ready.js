@@ -5,16 +5,7 @@ module.exports = {
     once: true,
     async execute(client) {
         const guild = client.guilds.cache.get(`1116901298239975515`)
-      
-      /* ⬇️ removing cool down from a channel because gamergod annoying ⬇️ */
-        const removeCooldown = async () => {
-            const channel = guild.channels.cache.get('1122282979088142406');          
-            channel.setRateLimitPerUser(0)
-            console.log(`Cooldown removed from ${channel.name}`); 
-        }; 
-        removeCooldown().catch(err => { console.log(err)});
-      /* ⬆️ removing cool down from a channel because gamergod annoying ⬆️ */
-      
+
         const statusArray = [
             {
                 type: ActivityType.Playing,
