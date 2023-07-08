@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const {SlashCommandBuilder} = require("discord.js");
 const userModel = require("../../models/userModel.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,33 +12,33 @@ module.exports = {
             .setDescription("Defaults to all, number of mouney you want to deposit")
         ),
     async execute(interaction, client) {
-        const { user } = interaction;
+        const {user} = interaction;
         let userData, amount;
 
         try {
-
-            userData = await userModel.findOne({ userID: user.id });
-
+            userData = await userModel.findOne({userID: user.id});
             if (!userData) {
-                const noprofile = new EmbedBuilder()
-                    .setDescription(`***:warning: You don\'t have a profile yet***`)
-                    .setColor(`Red`)
-                return await interaction.reply({
-                    embeds: [noprofile],
-                    ephemeral: true
-                })
+                return await replyWithEmbed(
+                    interaction, `This user does not have a profile yet!`,
+                    `#ff0000`, `:red_circle: Error`
+                )
             }
 
         } catch (e) {
             console.log(e.stack)
-            return await interaction.reply({
-                content: "There was an error retrieving your profile data",
-                ephemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to find this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
         amount = interaction.options.getInteger("amount") || userData.cash;
-        if (amount > userData.cash) return interaction.reply("***:warning: You don't have enough money to do this.***")
+        if (amount > userData.cash) {
+            return await replyWithEmbed(
+                interaction, `You do not have enough cash to deposit that amount!`,
+                `#ff0000`, `:red_circle: Error`
+            )
+        }
 
         // TODO: Give splits to relevant individual
         const
@@ -52,20 +53,16 @@ module.exports = {
             await userData.save()
         } catch (e) {
             console.error(e.stack)
-            return interaction.reply({
-                content: "**:warning: Failed to save balance.**",
-                epemeral: true
-            })
+            return await replyWithEmbed(
+                interaction, `An error occurred while trying to save this user's data.`,
+                `#ff0000`, `:red_circle: Error`
+            )
         }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`${user.username} deposited ${amount}`)
-            .setDescription(`***Deposited ${amount} into your bank. A 5% fee was taken***`)
-            .setColor(`Green`)
-            .setTimestamp()
-
-        return interaction.reply({
-            embeds: [embed], ephemeral: false
-        })
+        return await replyWithEmbed(
+            interaction, `You have deposited :dollar: **${amount.toLocaleString()}** into your bank account.`
+            + `\n\n**${beauSplit.toLocaleString() + arnavSplit.toLocaleString() + gamerSplit.toLocaleString()}** has been split between the authorities.`,
+            `#00ff00`, `:green_circle: Deposit`
+        )
     }
 }
