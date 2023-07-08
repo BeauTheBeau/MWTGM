@@ -26,7 +26,7 @@ module.exports = (client) => {
             }
         }
 
-        const clientId = client.user.id;
+        const clientId = process.env.CLIENT_ID
         const rest = new REST({ version: "9" }).setToken(Token);
         try {
             await rest.put(Routes.applicationCommands(clientId), {
