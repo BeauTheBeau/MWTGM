@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction) {
         const {channel, options} = interaction;
 
-        if (interaction.user.id !== "852219497763045376" && interaction.user.id !== "947568482407546991") {
+        if (interaction.user.id !== "729567972070391848" && interaction.user.id !== "947568482407546991") {
             return replyWithEmbed(interaction, `You can't use this command!`, "#ff0000", ":red_circle: Error");
         }
 
