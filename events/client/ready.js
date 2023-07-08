@@ -5,7 +5,7 @@ module.exports = {
     once: true,
     async execute(client) {
         const guild = client.guilds.cache.get(`1116901298239975515`)
-
+      
         const statusArray = [
             {
                 type: ActivityType.Playing,

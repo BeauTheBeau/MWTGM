@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
+const {SlashCommandBuilder} = require("discord.js");
 const userModel = require("../../models/userModel.js");
-const { replyWithEmbed } = require("../../functions/helpers/embedResponse")
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
 const shop = {
     // CHANNEL ID : [ PRICE, IMAGE ]
     "1117577834471370812": [0, `https://source.unsplash.com/featured/1920x1080/?poutine`],
@@ -18,11 +18,11 @@ module.exports = {
         .setDMPermission(false),
 
     async execute(interaction) {
-        const { user } = interaction;
+        const {user} = interaction;
         let userData;
 
         try {
-            userData = await userModel.findOne({ userID: user.id });
+            userData = await userModel.findOne({userID: user.id});
 
             if (!userData) return await replyWithEmbed(
                 interaction, `This user does not have a profile yet!`,
@@ -41,6 +41,5 @@ module.exports = {
                 `#ff0000`, `:red_circle: Error`
             )
         }
-
     }
 }

@@ -26,7 +26,7 @@ module.exports = {
             const remainingTimeUnix = Math.floor((Date.now() + remainingMilliseconds) / 1000);
 
             return await replyWithEmbed(
-                interaction, `You can rob again in ${remainingTimeUnix} seconds`,
+                interaction, `You can rob again in <t:${remainingTimeUnix}:R> seconds`,
                 `#ff0000`, `:red_circle: Error`
             )
         }
@@ -67,8 +67,8 @@ module.exports = {
         amount = Math.floor(Math.random() / 2 * targetData.cash);
 
         try {
-            targetData.cash -= amount;
-            userData.cash += amount;
+            targetData.cash -= Math.floor(amount);
+            userData.cash += Math.floor(amount);
             await userData.save()
             await targetData.save()
         } catch (e) {
@@ -84,15 +84,11 @@ module.exports = {
             `#00ff00`, `:white_check_mark: Success`
         )
 
-        await client.channels.cache.get(`892616707820079370`).send({
-            content: `**${user.username}** robbed :dollar: **${amount}** from **${target.user.username}**!`
-        })
-
         const cooldownEnd = Date.now() + cooldownTime;
 
         if (cooldownData) {
             cooldownData.cooldownEnd = cooldownEnd
-            await cooldownSchema.save()
+            await cooldownData.save()
         } else {
             await new cooldownSchema({
                 userID: user.id,

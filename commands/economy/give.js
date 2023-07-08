@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { replyWithEmbed } = require("../../functions/helpers/embedResponse");
+const {SlashCommandBuilder} = require("discord.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse");
 const userModel = require("../../models/userModel.js");
-const repl = require("repl");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,22 +19,22 @@ module.exports = {
         ),
 
     /** DOCUMENTATION
-      * ==========================================================
-      * Arnav: best command for people who don't have money to give 5% tax
-      *
-      * Beau: I LOVE TAXES
-      *
-      * Arnav: SAME! (TAKES SCREENSHOT)
-      *
-      * Beau: (ALSO TAKES SCSREENSHOT)
-      *
-      *
-      * # =========================
+     * ==========================================================
+     * Arnav: best command for people who don't have money to give 5% tax
+     *
+     * Beau: I LOVE TAXES
+     *
+     * Arnav: SAME! (TAKES SCREENSHOT)
+     *
+     * Beau: (ALSO TAKES SCSREENSHOT)
+     *
+     *
+     * # =========================
 
-      * DOCUMENTATION END */
+     * DOCUMENTATION END */
 
     async execute(interaction) {
-        const { options, user } = interaction;
+        const {options, user} = interaction;
         const target = interaction.options.getMember(`target`);
         let userData, targetData, amount;
 
@@ -48,8 +47,8 @@ module.exports = {
                 )
             }
 
-            userData = await userModel.findOne({ userID: user.id });
-            targetData = await userModel.findOne({ userID: target.id });
+            userData = await userModel.findOne({userID: user.id});
+            targetData = await userModel.findOne({userID: target.id});
 
             if (!userData) {
                 return await replyWithEmbed(
@@ -83,8 +82,8 @@ module.exports = {
         }
 
         try {
-            userData.cash -= amount;
-            targetData.cash += amount;
+            userData.cash -= Math.floor(amount);
+            targetData.cash += Math.floor(amount);
             await userData.save()
             await targetData.save()
         } catch (e) {
@@ -96,7 +95,7 @@ module.exports = {
         }
 
         return await replyWithEmbed(
-            interaction, `You have donated ${amount} to ${target.user.username}!`,
+            interaction, `You have donated **${amount.toLocaleString()}** to **${target.user.username}**!`,
             `#00ff00`, `:white_check_mark: Success`
         )
     }

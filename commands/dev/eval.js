@@ -21,4 +21,4 @@ module.exports = {
             return replyWithEmbed(interaction, `\`\`\`${err}\`\`\``, "#ff0000", ":red_circle: Error")
         }
     }
-};
+}

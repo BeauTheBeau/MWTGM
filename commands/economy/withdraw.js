@@ -1,5 +1,5 @@
-const { SlashCommandBuilder } = require("discord.js");
-const { replyWithEmbed } = require("../../functions/helpers/embedResponse");
+const {SlashCommandBuilder} = require("discord.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse");
 const userModel = require("../../models/userModel.js");
 
 module.exports = {
@@ -9,14 +9,14 @@ module.exports = {
         .setDMPermission(false)
         .addIntegerOption(option => option
             .setName("amount")
-            .setDescription(":dollar: Cash you want to withdraw from the :bank: bank. Default is all of it.")
+            .setDescription("Defaults to all, number of money you want to withdraw")
         ),
-    async execute(interaction) {
-        const { user } = interaction;
+    async execute(interaction, client) {
+        const {user} = interaction;
         let userData, amount;
 
         try {
-            userData = await userModel.findOne({ userID: user.id });
+            userData = await userModel.findOne({userID: user.id});
             if (!userData) {
                 return await replyWithEmbed(
                     interaction, `You don't have a profile yet!`,
@@ -49,8 +49,17 @@ module.exports = {
 
         try {
             userData.bank -= amount;
-            userData.cash += amount - totalSplit;
-            await userData.save()
+            userData.cash += Math.round(amount - totalSplit);
+
+            const beauUser = await userModel.findOne({userID: "729567972070391848"});
+            const arnavUser = await userModel.findOne({userID: "947568482407546991"});
+            const gamerUser = await userModel.findOne({userID: "599766470490062848"});
+
+            beauUser.bank += Math.floor(beauSplit);
+            arnavUser.bank += Math.floor(arnavSplit);
+            gamerUser.bank += Math.floor(gamerSplit);
+
+            await Promise.all([userData.save(), beauUser.save(), arnavUser.save(), gamerUser.save()]);
         } catch (e) {
             console.error(e.stack)
             return await replyWithEmbed(
@@ -66,4 +75,3 @@ module.exports = {
         )
     }
 }
-
