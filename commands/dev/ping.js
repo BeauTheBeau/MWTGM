@@ -6,7 +6,7 @@ module.exports = {
         .setName("ping")
         .setDescription("Check the API Latency and Client ping")
         .setDMPermission(false),
-    async execute(interaction, client) {
+    async execute(interaction) {
 
         const ping = interaction.client.ws.ping;
         const apiLatency = Date.now() - interaction.createdTimestamp;
