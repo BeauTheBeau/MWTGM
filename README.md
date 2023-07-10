@@ -20,3 +20,4 @@ This is a Discord bot the the MWT GameNights server.
 - [ ] Sabotage will raise the price of images
 - [ ] Money can only be securely stored in the faction treasury but can still be robbed to some extent.
 - [ ] Each faction has a net worth based on accumulated resources.
+- [ ] 
