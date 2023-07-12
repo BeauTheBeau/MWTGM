@@ -1,4 +1,4 @@
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no")
 const {SlashCommandBuilder} = require('discord.js')
 
 module.exports = {
@@ -67,7 +67,7 @@ module.exports = {
                 .then(async json => {
                     return json;
                 })
-                .catch(err => console.error(`Err`))
+                .catch(err => console.error(err));
 
             data = await Promise.resolve(data)
 

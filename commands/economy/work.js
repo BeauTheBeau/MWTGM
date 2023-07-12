@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require("discord.js");
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no")
 const userModel = require("../../models/userModel.js");
 const cooldownSchema = require('../../models/workCooldownModel.js')
 
@@ -17,7 +17,7 @@ module.exports = {
         .setDescription("Work to earn moneys")
         .setDMPermission(false),
 
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {user} = interaction;
         let userData;
         let cooldownTime = 8 * 60 * 60 * 1000;

@@ -1,11 +1,12 @@
-const { ActivityType, Client } = require("discord.js");
+const { ActivityType } = require("discord.js");
 
 module.exports = {
     name: "ready",
     once: true,
     async execute(client) {
         const guild = client.guilds.cache.get(`1116901298239975515`)
-      
+        if (!guild) return // If bot not in server
+
         const statusArray = [
             {
                 type: ActivityType.Playing,

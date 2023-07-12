@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require("discord.js");
 const userModel = require("../../models/userModel.js");
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse.js");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,9 +9,9 @@ module.exports = {
         .setDMPermission(false)
         .addIntegerOption(option => option
             .setName("amount")
-            .setDescription("Defaults to all, number of mouney you want to deposit")
+            .setDescription("Defaults to all, number of money you want to deposit")
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {user} = interaction;
         let userData, amount;
 
@@ -33,6 +33,14 @@ module.exports = {
         }
 
         amount = interaction.options.getInteger("amount") || userData.cash;
+
+        if (amount < 0) {
+            return await replyWithEmbed(
+                interaction, `You cannot deposit a negative amount!`,
+                `#ff0000`, `:red_circle: Error`
+            )
+        }
+
         if (amount > userData.cash) {
             return await replyWithEmbed(
                 interaction, `You do not have enough cash to deposit that amount!`,
@@ -40,15 +48,13 @@ module.exports = {
             )
         }
 
-        amount = interaction.options.getInteger("amount") || userData.cash;
         if (amount > userData.cash || userData.cash === 0) {
             return await replyWithEmbed(
-                interaction, `***:warning: You don't have enough money to do this.***`,
+                interaction, `You don't have enough money to do this.`,
                 `#ff0000`, `:red_circle: Error`
             )
         }
 
-        // TODO: Give splits to relevant individual
         const
             totalSplit = amount * 0.05,
             beauSplit = totalSplit / 3,

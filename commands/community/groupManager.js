@@ -1,6 +1,6 @@
 const groupModel = require(`../../models/groupModel.js`);
 const userModel = require(`../../models/userModel.js`);
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no")
 const {SlashCommandBuilder, ChannelType, PermissionsBitField, EmbedBuilder} = require('discord.js')
 
 module.exports = {

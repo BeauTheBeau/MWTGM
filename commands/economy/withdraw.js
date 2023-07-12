@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require("discord.js");
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no");
 const userModel = require("../../models/userModel.js");
 
 module.exports = {
@@ -11,7 +11,7 @@ module.exports = {
             .setName("amount")
             .setDescription("Defaults to all, number of money you want to withdraw")
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {user} = interaction;
         let userData, amount;
 

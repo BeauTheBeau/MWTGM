@@ -20,7 +20,7 @@ module.exports = (client) => {
             for (const file of commandFiles) {
                 const command = require(`../../commands/${folder}/${file}`);
                 if (command.data.name) {
-                    commands.set(command.data.name, command);
+                    await commands.set(command.data.name, command);
                     table.addRow(file, "Working");
                 }
                 commandArray.push(command.data.toJSON());
@@ -29,7 +29,7 @@ module.exports = (client) => {
         console.log(table.toString());
 
         const clientId = process.env.CLIENT_ID
-        const rest = new REST({ version: "9" }).setToken(token);
+        const rest = new REST().setToken(token);
 
         try {
             await rest.put(Routes.applicationCommands(clientId), {

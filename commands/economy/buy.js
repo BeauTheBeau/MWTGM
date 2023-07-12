@@ -1,6 +1,6 @@
 const {SlashCommandBuilder} = require("discord.js");
 const userModel = require("../../models/userModel.js");
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse")
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no")
 const shop = {
     // CHANNEL ID : [ PRICE, IMAGE ]
     "1117577834471370812": [0, `https://source.unsplash.com/featured/1920x1080/?poutine`],
@@ -28,6 +28,13 @@ module.exports = {
                 interaction, `This user does not have a profile yet!`,
                 `#ff0000`, `:red_circle: Error`
             )
+
+            // If channel isnt in shop
+            if (!shop[interaction.channel.id]) return await replyWithEmbed(
+                interaction, `This channel does not have a picture for sale.`,
+                `#ff0000`, `:red_circle: Error`
+            )
+            
 
             if (userData.cash < shop[interaction.channel.id][0]) return await replyWithEmbed(
                 interaction, `You do not have enough :dollar: cash to buy this picture.`,

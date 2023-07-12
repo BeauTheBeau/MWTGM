@@ -1,5 +1,5 @@
 const {SlashCommandBuilder} = require("discord.js");
-const {replyWithEmbed} = require("../../functions/helpers/embedResponse");
+const {replyWithEmbed} = require("../../functions/helpers/embedResponse.no");
 const userModel = require("../../models/userModel.js");
 const cooldownSchema = require('../../models/robCooldownModel.js')
 
@@ -13,7 +13,7 @@ module.exports = {
             .setDescription("The user you want to rob")
             .setRequired(true)
         ),
-    async execute(interaction, client) {
+    async execute(interaction) {
         const {options, user} = interaction;
         const target = options.getMember(`target`);
         let userData, targetData, amount;
