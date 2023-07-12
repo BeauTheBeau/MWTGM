@@ -8,9 +8,14 @@ const chalk = require('chalk')
 const table = new ascii().setHeading("Commands", "Status");
 const token = process.env.TOKEN
 
+let startTime;
+
 module.exports = (client) => {
     client.handleCommands = async () => {
-        
+
+        startTime = Date.now();
+        console.log(`${chalk.blue(`Loading commands...`)}`);
+
         const commandFolders = fs.readdirSync(`./commands`);
         for (const folder of commandFolders) {
             const commandFiles = fs
@@ -18,6 +23,7 @@ module.exports = (client) => {
                 .filter((file) => file.endsWith(`.js`));
             const { commands, commandArray } = client;
             for (const file of commandFiles) {
+                console.log(`${chalk.blue(`> Loading ${file}`)}`);
                 const command = require(`../../commands/${folder}/${file}`);
                 if (command.data.name) {
                     await commands.set(command.data.name, command);
@@ -27,6 +33,8 @@ module.exports = (client) => {
             }
         }
         console.log(table.toString());
+
+        console.log(`${chalk.blue(`> Loaded commands in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
 
         const clientId = process.env.CLIENT_ID
         const rest = new REST().setToken(token);
@@ -39,6 +47,5 @@ module.exports = (client) => {
         } catch (error) {
             console.error(error);
         }
-        
     };
 }

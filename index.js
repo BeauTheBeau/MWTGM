@@ -6,39 +6,81 @@ const token = secrets.token, mongoURI = secrets.mongoURI, clientId = secrets.cli
 const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder } = require('discord.js')
 const process = require(`node:process`)
 const fs = require('fs')
+const chalk = require('chalk')
 
 const mongoose = require(`mongoose`)
 const userModel = require('./models/userModel.js')
 const starboardMessageModel = require('./models/starboardMessageModel.js')
 
+let startTime
+
 const client = new Client({
   intents: Object.values(GatewayIntentBits).reduce((a, b) => a | b, 0),
 })
 
-const functionFolders = fs.readdirSync(`./functions`)
-for (const folder of functionFolders) {
-  const functionFolders = fs
-    .readdirSync(`./functions/${folder}`)
-    .filter((file) => file.endsWith('.js'))
-  for (const file of functionFolders)
-    try {
-      if (file.includes('.no')) continue
-      console.log(`Loading ${file}`)
-      require(`./functions/${folder}/${file}`)(client)
-    } catch (err) {
-      console.error(err.stack)
-    }
-}
+// Handle DB connection
+// Handle DB connection
+console.log(`${chalk.blue('Connecting to MongoDB...')}`);
+startTime = Date.now();
 
-client.commands = new Collection()
-client.commandArray = []
-client.buttons = new Collection()
-
-client.handleEvents()
-client.handleCommands()
-client.login(token).then(() => {
-  console.log('Logged in')
+mongoose.set(`strictQuery`, true);
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })
+  .then(() => {
+
+    console.log(`${chalk.blue(`> Connected to MongoDB in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
+    console.log();
+
+    // Login
+    startTime = Date.now();
+    console.log(`${chalk.blue(`Logging in...`)}`);
+    client.login(token)
+      .then(() => {
+        console.log(`${chalk.blue(`> Logged in as `) + chalk.green(`${client.user.tag} `) + chalk.blue(`in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
+        console.log();
+
+        // Load events
+        console.log(`${chalk.blue(`Loading events...`)}`);
+        startTime = Date.now();
+        const functionFolders = fs.readdirSync(`./functions`);
+        for (const folder of functionFolders) {
+          const functionFiles = fs
+            .readdirSync(`./functions/${folder}`)
+            .filter((file) => file.endsWith('.js'));
+
+          for (const file of functionFiles) {
+            try {
+              if (file.includes('.no')) continue;
+              console.log(`${chalk.blue(`> Loading event: ${file}`)}`);
+              require(`./functions/${folder}/${file}`)(client);
+            } catch (err) {
+              console.error(err.stack);
+            }
+          }
+        }
+
+        console.log(`${chalk.blue(`> Loaded events in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
+        console.log();
+
+        // Handle events and commands
+        client.commands = new Collection();
+        client.commandArray = [];
+        client.buttons = new Collection();
+
+        client.handleEvents();
+        client.handleCommands();
+
+      })
+      .catch((err) => {
+        console.error(err.stack);
+      });
+  })
+  .catch((err) => {
+    console.error(err.stack);
+  });
+
 
 // Prevent the process from exiting
 process.on('unhandledRejection', err => {
@@ -48,21 +90,6 @@ process.on('unhandledRejection', err => {
 process.on('uncaughtException', err => {
   console.log(`Unhandled exception`, err.stack)
 })
-
-// Handle DB connection
-console.log('Connecting to MongoDB')
-
-mongoose.set(`strictQuery`, true)
-mongoose.connect(mongoURI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('Connected to MongoDB')
-})
-  .catch((err) => {
-    console.error(err.stack)
-  })
-
 client.on(Events.MessageCreate, async (message) => {
     let userData
     try {
@@ -80,20 +107,21 @@ client.on(Events.MessageCreate, async (message) => {
       console.error(err.stack)
     }
 
-    // If a user replies to another message
     if (!message.reference) return
+    if (targetMessage.channelId === '1126965560421400606') return
 
+    // Starboard
+    /* If the message starts with star and is a reply to a message
+     * in the #starboard channel, then add the user to the starstruck array
+     * and react with a star emoji
+     */
     if (
       message.content.toLowerCase().startsWith('star') ||
       message.content.toLowerCase().startsWith(':star_struck:') ||
       message.content.toLowerCase().startsWith(':star:')) {
-    } else {
-      return
-    }
+    } else return
 
     const targetMessage = message.reference
-
-    if (targetMessage.channelId === '1126965560421400606') return
     let starboardMessageData
 
     try {
@@ -119,9 +147,10 @@ client.on(Events.MessageCreate, async (message) => {
     try {
       // If the user is not already starstruck
       if (starboardMessageData.starstruck.includes(message.author.id)) {
-        await message.react('🚫')
+        const reply = await message.reply('You already starred this message!')
         setTimeout(() => {
           message.delete()
+          reply.delete()
         }, 2000)
       } else {
         starboardMessageData.starstruck.push(message.author.id)
@@ -157,7 +186,6 @@ client.on(Events.MessageCreate, async (message) => {
             await starboardMessage.edit({ embeds: [embed] })
 
           }
-
         }
       }
     } catch (err) {
@@ -165,13 +193,10 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     try {
-      await message.react('⭐')
-      setTimeout(() => {
-        message.delete()
-      }, 2000)
+      await targetMessage.react('⭐')
+      await message.reply('${message.author.username} starred this message! You can as well, by typing `star` and replying to a message!')
     } catch (err) {
       console.error(err.stack)
     }
-
   }
 )
