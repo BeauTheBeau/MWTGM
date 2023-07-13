@@ -1,7 +1,7 @@
 const envSetup = require('./functions/helpers/envSetup.no.js')
 const secrets = envSetup()
 
-const token = secrets.token, mongoURI = secrets.mongoURI, clientId = secrets.clientId, dev = secrets.dev
+const { token, mongoURI, clientId, dev } = secrets
 
 const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder } = require('discord.js')
 const process = require(`node:process`)
@@ -19,68 +19,66 @@ const client = new Client({
 })
 
 // Handle DB connection
-// Handle DB connection
-console.log(`${chalk.blue('Connecting to MongoDB...')}`);
-startTime = Date.now();
+console.log(`${chalk.blue('Connecting to MongoDB...')}`)
+startTime = Date.now()
 
-mongoose.set(`strictQuery`, true);
+mongoose.set(`strictQuery`, true)
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
   .then(() => {
 
-    console.log(`${chalk.blue(`> Connected to MongoDB in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
-    console.log();
+    console.log(`${chalk.blue(`> Connected to MongoDB in `) + chalk.green(`${Date.now() - startTime}ms`)}`)
+    console.log()
 
     // Login
-    startTime = Date.now();
-    console.log(`${chalk.blue(`Logging in...`)}`);
+    startTime = Date.now()
+    console.log(`${chalk.blue(`Logging in...`)}`)
     client.login(token)
       .then(() => {
-        console.log(`${chalk.blue(`> Logged in as `) + chalk.green(`${client.user.tag} `) + chalk.blue(`in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
-        console.log();
+        console.log(`${chalk.blue(`> Logged in as `) + chalk.green(`${client.user.tag} `) + chalk.blue(`in `) + chalk.green(`${Date.now() - startTime}ms`)}`)
+        console.log()
 
         // Load events
-        console.log(`${chalk.blue(`Loading events...`)}`);
-        startTime = Date.now();
-        const functionFolders = fs.readdirSync(`./functions`);
+        console.log(`${chalk.blue(`Loading events...`)}`)
+        startTime = Date.now()
+        const functionFolders = fs.readdirSync(`./functions`)
         for (const folder of functionFolders) {
           const functionFiles = fs
             .readdirSync(`./functions/${folder}`)
-            .filter((file) => file.endsWith('.js'));
+            .filter((file) => file.endsWith('.js'))
 
           for (const file of functionFiles) {
             try {
-              if (file.includes('.no')) continue;
-              console.log(`${chalk.blue(`> Loading event: ${file}`)}`);
-              require(`./functions/${folder}/${file}`)(client);
+              if (file.includes('.no')) continue
+              console.log(`${chalk.blue(`> Loading event: ${file}`)}`)
+              require(`./functions/${folder}/${file}`)(client)
             } catch (err) {
-              console.error(err.stack);
+              console.error(err.stack)
             }
           }
         }
 
-        console.log(`${chalk.blue(`> Loaded events in `) + chalk.green(`${Date.now() - startTime}ms`)}`);
-        console.log();
+        console.log(`${chalk.blue(`> Loaded events in `) + chalk.green(`${Date.now() - startTime}ms`)}`)
+        console.log()
 
         // Handle events and commands
-        client.commands = new Collection();
-        client.commandArray = [];
-        client.buttons = new Collection();
+        client.commands = new Collection()
+        client.commandArray = []
+        client.buttons = new Collection()
 
-        client.handleEvents();
-        client.handleCommands();
+        client.handleEvents()
+        client.handleCommands()
 
       })
       .catch((err) => {
-        console.error(err.stack);
-      });
+        console.error(err.stack)
+      })
   })
   .catch((err) => {
-    console.error(err.stack);
-  });
-
+    console.error(err.stack)
+  })
 
 // Prevent the process from exiting
 process.on('unhandledRejection', err => {
@@ -108,6 +106,16 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     if (!message.reference) return
+
+    const targetMessage = message.reference
+    let starboardMessageData
+
+    try {
+      starboardMessageData = await starboardMessageModel.findOne({ messageID: message.reference.messageId })
+    } catch (err) {
+      console.error(err.stack)
+    }
+
     if (targetMessage.channelId === '1126965560421400606') return
 
     // Starboard
@@ -120,15 +128,6 @@ client.on(Events.MessageCreate, async (message) => {
       message.content.toLowerCase().startsWith(':star_struck:') ||
       message.content.toLowerCase().startsWith(':star:')) {
     } else return
-
-    const targetMessage = message.reference
-    let starboardMessageData
-
-    try {
-      starboardMessageData = await starboardMessageModel.findOne({ messageID: message.reference.messageId })
-    } catch (err) {
-      console.error(err.stack)
-    }
 
     // If the message does not exist in the database
     if (!starboardMessageData) {
