@@ -1,12 +1,20 @@
 const envSetup = require('./functions/helpers/envSetup.no.js')
 const secrets = envSetup()
 
-const { token, mongoURI, clientId, dev } = secrets
+const { token, mongoURI, clientId, debug } = secrets
 
 const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder } = require('discord.js')
 const process = require(`node:process`)
 const fs = require('fs')
 const chalk = require('chalk')
+
+const features = {
+  'nerdboard': false,
+  'starboard': false,
+  'xp': true
+}
+
+const options = {}
 
 const mongoose = require(`mongoose`)
 const userModel = require('./models/userModel.js')
@@ -98,104 +106,143 @@ client.on(Events.MessageCreate, async (message) => {
           userID: message.author.id,
           bank: 500,
           cash: 0,
-          alignment: 'None'
+          alignment: 'None',
+          xp: 0,
+          level: 0
         }).save()
       }
     } catch (err) {
       console.error(err.stack)
     }
 
-    if (!message.reference) return
+    if (features.xp) {
+      if (message.author.bot) return
 
-    const targetMessage = message.reference
-    let starboardMessageData
+      const xp = Math.floor(Math.random() * 10) + 15
+      const xpToNextLevel = Math.ceil(userData.level * 100 * 1.5)
+      const newXP = userData.xp + xp
+      const newLevel = Math.floor(0.1 * Math.sqrt(newXP))
+      const levelDifference = newLevel - userData.level
 
-    try {
-      starboardMessageData = await starboardMessageModel.findOne({ messageID: message.reference.messageId })
-    } catch (err) {
-      console.error(err.stack)
+      if (newLevel > userData.level) {
+        message.channel.send(`Congratulations ${message.author}! You've leveled up to level ${newLevel}!`)
+        await userModel.findOneAndUpdate({ userID: message.author.id }, { level: newLevel })
+      }
+
+      if (newXP >= xpToNextLevel) await userModel.findOneAndUpdate({ userID: message.author.id }, { xp: newXP })
+
+      if (debug === "true" || message.content.includes("~dev")) {
+
+        await message.channel.send({
+          content: `\`\`\`js\n`
+            + `"XP"                ${userData.xp}\n`
+            + `"XP Before"         ${userData.xp - xp}\n`
+            + `"XP After"          ${userData.xp + xp}\n`
+
+            + `\n`
+            + `"Level"             ${userData.level}\n`
+            + `"Level Before"      ${userData.level - levelDifference}\n`
+            + `"Level After"       ${userData.level + levelDifference}\n`
+
+            + `\n`
+            + `"XP to Next Level"  ${xpToNextLevel}\n`
+            + `"XP Gained"         ${xp}\n`
+            + `\`\`\``
+
+        })
+      }
     }
 
-    if (targetMessage.channelId === '1126965560421400606') return
-
-    // Starboard
-    /* If the message starts with star and is a reply to a message
-     * in the #starboard channel, then add the user to the starstruck array
-     * and react with a star emoji
+    /**
+     * @name: Starboard
+     * @description: Handles the starboard - when a message is starred and its star count is above the threshold,
+     * it is sent to the starboard channel or updated if it already exists in the starboard channel.
+     * @param {Object} message - The message object
+     * @param {Object} targetMessage - The message object of the message that was starred
+     * @param {Object} starboardMessageData - The starboard message data object
+     * @param {String} starboardChannel - The ID of the starboard channel
+     * @param {Number} starCount - The number of stars the message has
+     * @param {Object} starboardMessage - The starboard message object
      */
-    if (
-      message.content.toLowerCase().startsWith('star') ||
-      message.content.toLowerCase().startsWith(':star_struck:') ||
-      message.content.toLowerCase().startsWith(':star:')) {
-    } else return
 
-    // If the message does not exist in the database
-    if (!starboardMessageData) {
-      const starboardMessage = await new starboardMessageModel({
-        messageID: targetMessage.messageId,
-        guildID: targetMessage.guildId,
-        channelID: targetMessage.channelId,
-        starstruck: [],
-        sent: false
-      }).save()
+    const starboardChannel = `1034630838081552495`
+    const nerdboardChannel = `1126965560421400606`
 
-      await starboardMessage.save()
-      starboardMessageData = starboardMessage
-    }
+    if (features.starboard) {
+      if (!message.reference) return
+      const targetMessage = await message.channel.messages.fetch(message.reference.messageId)
+      if (!targetMessage) return
 
-    try {
-      // If the user is not already starstruck
-      if (starboardMessageData.starstruck.includes(message.author.id)) {
-        const reply = await message.reply('You already starred this message!')
-        setTimeout(() => {
-          message.delete()
-          reply.delete()
-        }, 2000)
+      if (
+        message.content.toLowerCase().startsWith('nerd') ||
+        message.content.toLowerCase().startsWith('🤓')
+      ) await targetMessage.react('🤓')
+
+      if (message.channel.id === starboardChannel) return
+      if (message.author.bot) return
+
+      const starboardMessageData = await starboardMessageModel.findOne({ messageID: targetMessage.id })
+      const starCount = starboardMessageData ? starboardMessageData.starCount : 0
+
+      // Update the DB
+      if (!starboardMessageData) {
+        await new starboardMessageModel({
+          messageID: targetMessage.id,
+          guildID: targetMessage.guild.id,
+          channelID: targetMessage.channel.id,
+          starboardMessageID: undefined,
+          starstruck: [message.author.id]
+        }).save()
       } else {
-        starboardMessageData.starstruck.push(message.author.id)
-        await starboardMessageData.save()
+        await starboardMessageModel.findOneAndUpdate({ messageID: targetMessage.id }, {
+          starboardMessageID: message.id,
+          $addToSet: { starstruck: `${message.author.id}${Math.random().toString(36).substring(7)}` }
+        })
+      }
 
-        // If starstruck count is 1+
-        if (starboardMessageData.starstruck.length >= 1) {
+      if (starCount >= 0) {
 
-          const starboardChannel = await client.channels.fetch('1126965560421400606')
-          const targetChannel = await client.channels.fetch(starboardMessageData.channelID)
-          const targetMessage = await targetChannel.messages.fetch(starboardMessageData.messageID)
+        const starboardMessage = await message.channel.messages.fetch(starboardMessageData.starboardMessageID)
+        let starboardEmbed = starboardMessage.embeds[0]
 
-          if (starboardMessageData.sent === false) {
-            const embed = new EmbedBuilder()
-              .setTitle(`Message by ${targetMessage.author.username} in #${targetChannel.name}`)
-              .setDescription(`**${starboardMessageData.starstruck.length}** :star: ${targetMessage.content}\n`
-                + `[Jump to message](${targetMessage.url})`)
-              .setTimestamp()
+        if (starboardEmbed) {
+          starboardEmbed = await new EmbedBuilder(starboardEmbed)
+          starboardEmbed.setAuthor({
+            name: `${targetMessage.author.tag} (${targetMessage.author.id})`,
+            iconURL: targetMessage.author.avatarURL
+          })
+          starboardEmbed.setDescription(targetMessage.content)
+          starboardEmbed.setFooter({
+            text: `${starCount} ⭐ | ${targetMessage.id}`
+          })
+        }
 
-            const sentMessage = await starboardChannel.send({ embeds: [embed] })
-            starboardMessageData.sent = true
-            starboardMessageData.starboardMessageID = sentMessage.id
-            await starboardMessageData.save()
-          } else {
+        if (!starboardEmbed) {
+          starboardEmbed = await new EmbedBuilder()
+            .setAuthor(`${targetMessage.author.tag} (${targetMessage.author.id})`, targetMessage.author.avatarURL)
+            .setDescription(targetMessage.content)
+            .setFooter(`${starCount} ⭐ | ${targetMessage.id}`)
+        }
 
-            const starboardMessage = await starboardChannel.messages.fetch(starboardMessageData.starboardMessageID)
-            const embed = new EmbedBuilder()
-              .setTitle(`Message by ${targetMessage.author.username} in #${targetChannel.name}`)
-              .setDescription(`**${starboardMessageData.starstruck.length}** :star: ${targetMessage.content}\n`
-                + `[Jump to message](${targetMessage.url})`)
-              .setTimestamp()
+        if (starboardMessage) {
+          starboardMessage.edit({
+            embeds: [starboardEmbed]
+          })
+        }
 
-            await starboardMessage.edit({ embeds: [embed] })
+        if (!starboardMessage) {
+          const sentMessage = await client.channels.cache.get(starboardChannel).send({
+            embeds: [starboardEmbed]
+          })
 
-          }
+          await new starboardMessageModel({
+            messageID: targetMessage.id,
+            starboardMessageID: sentMessage.id,
+            starCount: starCount
+          }).save()
         }
       }
-    } catch (err) {
-      console.error(err.stack)
     }
 
-    try {
-      await targetMessage.react('⭐')
-      await message.reply('${message.author.username} starred this message! You can as well, by typing `star` and replying to a message!')
-    } catch (err) {
-      console.error(err.stack)
-    }
   }
 )
