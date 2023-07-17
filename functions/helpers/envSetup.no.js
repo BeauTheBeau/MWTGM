@@ -26,8 +26,8 @@ module.exports = (token, mongoURI, clientId, dev) => {
     process.exit(1);
   }
 
-  if (process.env.dev) {
-    console.log(`Running in development mode.`);
+  if (process.env.DEBUG) {
+    console.log(`Running in debug mode.`);
   }
 
   if (!fs.existsSync(`./.env`)) {
@@ -41,7 +41,7 @@ module.exports = (token, mongoURI, clientId, dev) => {
     token: process.env.TOKEN,
     mongoURI: process.env.MONGO_URI,
     clientId: process.env.CLIENT_ID,
-    dev: process.env.DEV
+    debug: process.env.DEBUG
   };
 };
 

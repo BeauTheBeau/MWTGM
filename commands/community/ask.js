@@ -45,12 +45,6 @@ module.exports = {
             + `You can also use links with <https://example.com> or [Example](https://example.com).`
             + `You can also use emojis with :<EMOJI NAME>:.`;
 
-
-        await replyWithEmbed(
-            interaction, `Your question: ${question}`,
-            `#0000ff`, `:blue_circle: Fetching answer!`
-        )
-
         try {
             const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
@@ -81,8 +75,8 @@ module.exports = {
 
             const answer = data.answer;
             await replyWithEmbed(
-                interaction, `A${answer}`,
-                `#00ff00`, `:green_circle: Success`
+                interaction, `${answer}`,
+                `#00ff00`, `:green_circle: You asked: ${question}`
             )
         } catch (e) {
             console.log(`Error`)
