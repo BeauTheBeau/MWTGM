@@ -116,41 +116,39 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     if (features.xp) {
-      if (message.author.bot) return
+      if (message.author.bot) return;
 
-      const xp = Math.floor(Math.random() * 10) + 15
-      const xpToNextLevel = Math.ceil(userData.level * 100 * 1.5)
-      const newXP = userData.xp + xp
-      const newLevel = Math.floor(0.1 * Math.sqrt(newXP))
-      const levelDifference = newLevel - userData.level
+      const xp = Math.floor(Math.random() * 10) + 15;
+      const xpToNextLevel = Math.ceil(userData.level * 100 * 1.5);
+      const newXP = userData.xp + xp;
+      const newLevel = Math.floor(0.1 * Math.sqrt(newXP));
+      const levelDifference = newLevel - userData.level;
 
       if (newLevel > userData.level) {
-        message.channel.send(`Congratulations ${message.author}! You've leveled up to level ${newLevel}!`)
-        await userModel.findOneAndUpdate({ userID: message.author.id }, { level: newLevel })
+        await message.channel.send(`Congratulations ${message.author}! You've leveled up to level ${newLevel}!`);
+        await userModel.findOneAndUpdate({ userID: message.author.id }, { level: newLevel });
       }
 
-      if (newXP >= xpToNextLevel) await userModel.findOneAndUpdate({ userID: message.author.id }, { xp: newXP })
+      if (newXP >= xpToNextLevel) await userModel.findOneAndUpdate({ userID: message.author.id }, { xp: newXP });
+      if (debug !== 'true' && !message.content.includes('~dev')) return;
 
-      if (debug === "true" || message.content.includes("~dev")) {
+      await message.channel.send({
+        content: `\`\`\`js\n`
+          + `"XP"                ${userData.xp}\n`
+          + `"XP Before"         ${userData.xp - xp}\n`
+          + `"XP After"          ${userData.xp + xp}\n`
 
-        await message.channel.send({
-          content: `\`\`\`js\n`
-            + `"XP"                ${userData.xp}\n`
-            + `"XP Before"         ${userData.xp - xp}\n`
-            + `"XP After"          ${userData.xp + xp}\n`
+          + `\n`
+          + `"Level"             ${userData.level}\n`
+          + `"Level Before"      ${userData.level - levelDifference}\n`
+          + `"Level After"       ${userData.level + levelDifference}\n`
 
-            + `\n`
-            + `"Level"             ${userData.level}\n`
-            + `"Level Before"      ${userData.level - levelDifference}\n`
-            + `"Level After"       ${userData.level + levelDifference}\n`
+          + `\n`
+          + `"XP to Next Level"  ${xpToNextLevel}\n`
+          + `"XP Gained"         ${xp}\n`
+          + `\`\`\``
+      })
 
-            + `\n`
-            + `"XP to Next Level"  ${xpToNextLevel}\n`
-            + `"XP Gained"         ${xp}\n`
-            + `\`\`\``
-
-        })
-      }
     }
 
     /**
