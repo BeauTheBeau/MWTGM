@@ -16,7 +16,7 @@ This is a Discord bot for the MWT GameNights server.
 
 - [X] Includes an economy system with a virtual currency
 - [X] Users can give each other money
-- [ ] Users can spend their currency in Nationality and Culture channels to access random, relevant pictures
+- [X] Users can spend their currency in Nationality and Culture channels to access random, relevant pictures
 
 - [X] Users can align themselves with different groups
 - [ ] Groups have a joint treasury managed by elected leaders
@@ -61,7 +61,7 @@ npm start
 ### Doesn't Work?
 ~~Cope.~~
 - Open an issue and I (or someone else), will try to help you out
-- If on a non Unix-like system, this may not work (especially the `echo` command)
+- If on a non Unix-like system, this may not work
 - We have not tested this method of installation
 - I plan to make this process easier in the future, by using [Docker](https://www.docker.com/)
 
