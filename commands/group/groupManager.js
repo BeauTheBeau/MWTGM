@@ -211,7 +211,7 @@ module.exports = {
 
       const members = group.members
       if (members.length === 1) return replyWithEmbed(interaction, `You cannot pay out to yourself.`, '#ff0000', ':red_circle: Error')
-      if (interaction.options.getUser('user') not in members) return replyWithEmbed(interaction, `That user is not in your group.`, '#ff0000', ':red_circle: Error')
+      if (!members.includes(interaction.options.getUser(`user`).id)) return replyWithEmbed(interaction, `That user is not in your group.`, '#ff0000', ':red_circle: Error')
 
       const payoutUser = interaction.options.getUser(`user`)
       const payoutUserModel = await userModel.findOne({ userID: payoutUser.id })
