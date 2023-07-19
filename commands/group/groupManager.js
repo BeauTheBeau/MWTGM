@@ -29,8 +29,7 @@ module.exports = {
         option.setName(`description`)
           .setDescription(`The description of the group.`)
           .setRequired(false)
-      )
-    )
+      ))
     .addSubcommand(subcommand => subcommand
       .setName(`edit`)
       .setDescription(`Edit a group.`)
@@ -50,8 +49,20 @@ module.exports = {
         .setName(`value`)
         .setDescription(`The value to set the key to.`)
         .setRequired(true)
+      ))
+    .addSubcommand(subcommand => subcommand
+      .setName(`pay`)
+      .setDescription(`Pay a member of your group.`)
+      .addUserOption(option => option
+        .setName(`user`)
+        .setDescription(`The user to pay.`)
+        .setRequired(true)
       )
-    ),
+      .addIntegerOption(option => option
+        .setName(`amount`)
+        .setDescription(`The amount to pay.`)
+        .setRequired(true)
+      )),
 
   async execute (interaction) {
 
@@ -149,7 +160,7 @@ module.exports = {
             console.error(e.stack)
             return replyWithEmbed(interaction, `An error occurred while trying to edit the group name.`, '#ff0000', ':red_circle: Error')
           }
-          break;
+          break
 
         case `description`:
           if (targetValue.length > 512) return replyWithEmbed(interaction, `Group descriptions must be 1000 characters or less.`, '#ff0000', ':red_circle: Error')
@@ -165,7 +176,7 @@ module.exports = {
             return replyWithEmbed(interaction, `An error occurred while trying to edit the group name.`, '#ff0000', ':red_circle: Error')
           }
 
-          break;
+          break
 
         case `emoji`:
 
@@ -182,13 +193,40 @@ module.exports = {
             return replyWithEmbed(interaction, `An error occurred while trying to edit the group emoji.`, '#ff0000', ':red_circle: Error')
           }
 
-          break;
+          break
 
         default:
           return replyWithEmbed(interaction, `https://http.cat/501`, '#ff0000', ':red_circle: 501 Not Implemented')
       }
 
     }
+    if (subcommand === `pay`) {
 
+      const group = await groupModel.findOne({ owner: interaction.user.id })
+      if (!group) return replyWithEmbed(interaction, `You do not own a group.`, '#ff0000', ':red_circle: Error')
+
+      const payoutAmount = interaction.options.getInteger(`amount`)
+      if (payoutAmount < 0) return replyWithEmbed(interaction, `You cannot pay out a negative amount.`, '#ff0000', ':red_circle: Error')
+      if (payoutAmount > group.balance) return replyWithEmbed(interaction, `You cannot pay out more than your group's balance.`, '#ff0000', ':red_circle: Error')
+
+      const members = group.members
+      if (members.length === 1) return replyWithEmbed(interaction, `You cannot pay out to yourself.`, '#ff0000', ':red_circle: Error')
+      if (interaction.options.getUser('user') not in members) return replyWithEmbed(interaction, `That user is not in your group.`, '#ff0000', ':red_circle: Error')
+
+      const payoutUser = interaction.options.getUser(`user`)
+      const payoutUserModel = await userModel.findOne({ userID: payoutUser.id })
+      if (!payoutUserModel) return replyWithEmbed(interaction, `That user does not have an account.`, '#ff0000', ':red_circle: Error')
+
+      try {
+        await userModel.findOneAndUpdate({ userID: payoutUser.id }, { $inc: { cash: payoutAmount } })
+        await groupModel.findOneAndUpdate({ owner: interaction.user.id }, { $inc: { balance: -payoutAmount } })
+
+        return await replyWithEmbed(interaction, `Successfully paid out ${payoutAmount} to ${payoutUser}.`, '#00ff00', `:white_check_mark: Successfully paid out`)
+
+      } catch (e) {
+        console.error(e.stack)
+        return replyWithEmbed(interaction, `An error occurred while trying to pay out.`, '#ff0000', ':red_circle: Error')
+      }
+    }
   }
 }
