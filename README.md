@@ -16,7 +16,7 @@ This is a Discord bot for the MWT GameNights server.
 
 - [X] Includes an economy system with a virtual currency
 - [X] Users can give each other money
-- [X] Currency can be used in Nationality and Culture channels to access random, relevant pictures
+- [ ] Users can spend their currency in Nationality and Culture channels to access random, relevant pictures
 
 - [X] Users can align themselves with different groups
 - [ ] Groups have a joint treasury managed by elected leaders
