@@ -16,6 +16,16 @@ module.exports = (token, mongoURI, clientId, dev) => {
     process.exit(1);
   }
 
+  if (!process.env.UNSPLASH_ACCESS_KEY) {
+    console.log(`No Unsplash access key provided. Please add a Unsplash access key to your .env file.`);
+    process.exit(1);
+  }
+
+  if (!process.env.UNSPLASH_SECRET_KEY) {
+    console.log(`No Unsplash secret key provided. Please add a Unsplash secret key to your .env file.`);
+    process.exit(1);
+  }
+
   if (!process.env.MONGO_URI) {
     console.log(`No MongoDB URI provided. Please add a MongoDB URI to your .env file.`);
     process.exit(1);
@@ -32,7 +42,7 @@ module.exports = (token, mongoURI, clientId, dev) => {
 
   if (!fs.existsSync(`./.env`)) {
     console.log(`No .env file found. Creating one now.`);
-    fs.writeFileSync(`./.env`, `TOKEN=${token}\nMONGO_URI=${mongoURI}\nCLIENT_ID=${clientId}\nDEV=${dev}`);
+    fs.writeFileSync(`./.env`, `TOKEN=${token}\nMONGO_URI=${mongoURI}\nCLIENT_ID=${clientId}\nDEV=${dev},\nDEBUG=false\nUNSPLASH_ACCESS_KEY=${process.env.UNSPLASH_ACCESS_KEY}\nUNSPLASH_SECRET_KEY=${process.env.UNSPLASH_SECRET_KEY}`);
   }
 
   console.log(`.env file found. Loading variables.`);
@@ -41,7 +51,9 @@ module.exports = (token, mongoURI, clientId, dev) => {
     token: process.env.TOKEN,
     mongoURI: process.env.MONGO_URI,
     clientId: process.env.CLIENT_ID,
-    debug: process.env.DEBUG
+    debug: process.env.DEBUG,
+    unsplashAccessKey: process.env.UNSPLASH_ACCESS_KEY,
+    unsplashSecretKey: process.env.UNSPLASH_SECRET_KEY
   };
 };
 

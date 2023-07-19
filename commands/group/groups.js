@@ -1,7 +1,8 @@
 const groupModel = require(`../../models/groupModel.js`)
 const userModel = require(`../../models/userModel.js`)
 const { replyWithEmbed } = require('../../functions/helpers/embedResponse.no')
-const { SlashCommandBuilder, ChannelType, PermissionsBitField, EmbedBuilder } = require('discord.js')
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js')
+const { createApi } = require('unsplash-js')
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,7 +20,7 @@ module.exports = {
 
     .addSubcommand(subcommand => subcommand
       .setName(`buy`)
-      .setDescription(`Buy an image from the group's image pool. This money goes to the group's balance.`)
+      .setDescription(`Buy an image from the group's image pool.`)
       .addStringOption(option =>
         option.setName(`name`)
           .setDescription(`The name of the group.`)
@@ -144,6 +145,47 @@ module.exports = {
       if (groupNames.length === 0) return replyWithEmbed(interaction, `There are no groups.`, '#ff0000', `:red_circle: Error`)
       await replyWithEmbed(interaction, `${groupNames.length} groups found!\n- ${groupNames.join(`\n- `)}`, '#00ff00', `:white_check_mark: Groups list`)
     }
+    if (subcommand === `buy`) {
 
+      // Buy an image from the target group
+      // The proceeds are sent to the group balance
+      const groupName = interaction.options.getString(`name`)
+      const groupData = await groupModel.findOne({ name: groupName })
+      if (!groupData) return replyWithEmbed(interaction, `A group with that name does not exist.`, '#ff0000', ':red_circle: Error')
+
+      // Check if the user has enough money
+      if (userData.cash < 5000) return replyWithEmbed(interaction, `You do not have enough money to buy a group image.`, '#ff0000', ':red_circle: Error')
+
+      // Get the key temrs
+      const terms = groupData.terms ? groupData.terms : `cat`
+
+      // Get image using Unsplash API
+      createApi({
+        accessKey: process.env.UNSPLASH_ACCESS_KEY
+      }).photos.getRandom({ query: terms, count: 1 }).then(async result => {
+        console.log(result.response[0])
+
+        let data = result.response[0]
+
+        const embed = new EmbedBuilder()
+          .setColor(`#00ff00`)
+          .setAuthor({
+            name: `By ${data.user.name}`,
+            url: data.user.links.html,
+            iconURL: data.user.profile_image.small
+          })
+          .setImage(data.urls.regular)
+          .setTimestamp()
+          .setFooter({
+            text: `Via Unsplash • ${terms}`,
+            iconURL: `https://cdn.iconscout.com/icon/free/png-256/free-unsplash-5285318-4406755.png`
+          })
+        await interaction.reply({ embeds: [embed] })
+
+        // Update the user's/group's balance
+        await userModel.findOneAndUpdate({ userID: interaction.user.id }, { $inc: { cash: -5000 } })
+        await groupModel.findOneAndUpdate({ name: groupName }, { $inc: { balance: 5000 } })
+      })
+    }
   }
 }
