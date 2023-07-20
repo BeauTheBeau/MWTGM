@@ -108,11 +108,21 @@ module.exports = {
     }
     if (subcommand === 'info') {
 
-      const groupName = interaction.options.getString('name').toLowerCase()
+      let groupName = interaction.options.getString('name').toLowerCase()
       if (!groupName) return replyWithEmbed(interaction, `You must specify a group name.`, '#ff0000', ':red_circle: Error')
 
       // non case sensitive
-      const groupExists = await groupModel.exists({ name: groupName })
+      // Loop through all groups and check if the name matches
+      let groupExists;
+
+      for (const group of await groupModel.find()) {
+        if (group.name.toLowerCase() === groupName) {
+          groupExists = true
+          groupName = group.name
+          break
+        }
+      }
+
       if (!groupExists) return replyWithEmbed(interaction, `A group with that name does not exist.`, '#ff0000', ':red_circle: Error')
 
       const groupData = await groupModel.findOne({ name: groupName })
@@ -125,7 +135,6 @@ module.exports = {
       for (const member of groupData.members) {
         if (member === 'Vacant') members.push('Vacant')
         else members.push(await interaction.client.users.fetch(member).username)
-
       }
 
       const embed = new EmbedBuilder()
@@ -151,9 +160,9 @@ module.exports = {
       const groupNames = []
 
       for (const group of groups) groupNames.push(
-        `[${group.name}](https://discord.com/channels/${group.guildID}/${group.channelID}) - `
-        + `${group.members.length} ${group.members.length === 1 ? 'member' : 'members'} - `
-        + `\$${group.balance.toLocaleString()}`)
+        `**[${group.name}](https://discord.com/channels/${group.guildID}/${group.channelID})** | `
+        + `${ /*Ignore if "Vacant"*/ group.members[0] === 'Vacant' ? 0 : group.members.length} members | `
+        + `:dollar: ${group.balance.toLocaleString()}`)
       if (groupNames.length === 0) return replyWithEmbed(interaction, `There are no groups.`, '#ff0000', `:red_circle: Error`)
       await replyWithEmbed(interaction, `${groupNames.length} groups found!\n- ${groupNames.join(`\n- `)}`, '#00ff00', `:white_check_mark: Groups list`)
     }
