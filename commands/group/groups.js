@@ -4,6 +4,8 @@ const { replyWithEmbed } = require('../../functions/helpers/embedResponse.no')
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js')
 const { createApi } = require('unsplash-js')
 
+// TODO: Migrate to use new helper function for embeds
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName(`group`)
@@ -106,17 +108,24 @@ module.exports = {
     }
     if (subcommand === 'info') {
 
+      const groupName = interaction.options.getString('name').toLowerCase()
       if (!groupName) return replyWithEmbed(interaction, `You must specify a group name.`, '#ff0000', ':red_circle: Error')
 
+      // non case sensitive
       const groupExists = await groupModel.exists({ name: groupName })
       if (!groupExists) return replyWithEmbed(interaction, `A group with that name does not exist.`, '#ff0000', ':red_circle: Error')
 
       const groupData = await groupModel.findOne({ name: groupName })
-      const owner = await interaction.client.users.fetch(groupData.owner)
+
+      let owner
+      if (groupData.owner === 'Vacant') owner = 'Vacant'
+      else owner = await interaction.client.users.fetch(groupData.owner).username
+
       const members = []
       for (const member of groupData.members) {
-        const user = await interaction.client.users.fetch(member)
-        members.push(user.tag)
+        if (member === 'Vacant') members.push('Vacant')
+        else members.push(await interaction.client.users.fetch(member).username)
+
       }
 
       const embed = new EmbedBuilder()
@@ -124,22 +133,25 @@ module.exports = {
         .setTitle(`Group Info`)
         .addFields(
           { name: `Name`, value: groupData.name, inline: true },
-          { name: `Owner`, value: owner.tag, inline: true },
+          { name: `Owner`, value: owner, inline: true },
           { name: `Members`, value: members.join(`\n`), inline: true },
           { name: `Balance`, value: `$${groupData.balance}`, inline: true },
         )
         .setTimestamp()
-        .setFooter(`Group ID: ${groupData._id}`)
+        .setFooter({
+          text: `Requested by ${interaction.user.username}`,
+          iconURL: interaction.user.avatarURL(),
+        })
+
 
       return interaction.reply({ embeds: [embed] })
     }
     if (subcommand === 'list') {
-      // list all groups
       const groups = await groupModel.find({})
       const groupNames = []
 
       for (const group of groups) groupNames.push(
-        `<#${group.channelID}> - `
+        `[${group.name}](https://discord.com/channels/${group.guildID}/${group.channelID}) - `
         + `${group.members.length} ${group.members.length === 1 ? 'member' : 'members'} - `
         + `\$${group.balance.toLocaleString()}`)
       if (groupNames.length === 0) return replyWithEmbed(interaction, `There are no groups.`, '#ff0000', `:red_circle: Error`)
