@@ -1,6 +1,7 @@
 const userModel = require(`../../models/userModel.js`)
 const { replyWithEmbed } = require('../../functions/helpers/embedResponse.no')
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js')
+const chalk = require('chalk')
 
 module.exports = {
   name: 'interactionCreate',
@@ -11,10 +12,15 @@ module.exports = {
       const command = commands.get(commandName)
       if (!command) return
 
+      let startTime = Date.now();
       try {
+        console.log(`${chalk.green(`[COMMAND]`)} ${chalk.blue(`${interaction.user.username}`)} ran command ${chalk.blue(`${commandName}`)}`)
         await command.execute(interaction, client)
+        console.log(`${chalk.green(`> [${chalk.green(`${Date.now() - startTime}ms`)}]`)} ${chalk.blue(`${commandName}`)} finished with no errors`)
       } catch (error) {
+        console.log(`${chalk.red(`> [${chalk.red(`${Date.now() - startTime}ms`)}]`)} ${chalk.blue(`${commandName}`)} finished with errors`)
         console.error(error)
+        console.log(`${chalk.red(`[ERROR]`)} ${chalk.blue(`${interaction.user.username}`)} ran command ${chalk.blue(`${commandName}`)} and got an error`)
         await interaction.reply({
           content: `Something went wrong while executing this command...`,
           ephemeral: true,

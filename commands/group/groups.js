@@ -111,7 +111,6 @@ module.exports = {
       let groupName = interaction.options.getString('name').toLowerCase()
       if (!groupName) return replyWithEmbed(interaction, `You must specify a group name.`, '#ff0000', ':red_circle: Error')
 
-      // non case sensitive
       // Loop through all groups and check if the name matches
       let groupExists;
 
