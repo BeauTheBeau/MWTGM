@@ -1,6 +1,9 @@
 const envSetup = require('./functions/helpers/envSetup.no.js')
 const secrets = envSetup()
 
+const { exec } = require('child_process')
+const cron = require('node-cron')
+
 const { token, mongoURI, clientId, debug } = secrets
 
 const { Client, GatewayIntentBits, Collection, Events, EmbedBuilder } = require('discord.js')
@@ -97,150 +100,204 @@ process.on('uncaughtException', err => {
   console.log(`Unhandled exception`, err.stack)
 })
 client.on(Events.MessageCreate, async (message) => {
-    let userData
-    try {
-      userData = await userModel.findOne({ userID: message.author.id })
+  let userData
+  try {
+    userData = await userModel.findOne({ userID: message.author.id })
 
-      if (!userData) {
-        await new userModel({
-          userID: message.author.id,
-          bank: 500,
-          cash: 0,
-          alignment: 'None',
-          xp: 0,
-          level: 0
-        }).save()
-      }
-    } catch (err) {
-      console.error(err.stack)
+    if (!userData) {
+      await new userModel({
+        userID: message.author.id,
+        bank: 500,
+        cash: 0,
+        alignment: 'None',
+        xp: 0,
+        level: 0
+      }).save()
+    }
+  } catch (err) {
+    console.error(err.stack)
+  }
+
+  if (features.xp) {
+    if (message.author.bot) return
+
+    const xp = Math.floor(Math.random() * 10) + 15
+    const xpToNextLevel = Math.ceil(userData.level * 100 * 1.5)
+    const newXP = userData.xp + xp
+    const newLevel = Math.floor(0.1 * Math.sqrt(newXP))
+    const levelDifference = newLevel - userData.level
+
+    if (newLevel > userData.level) {
+      await message.channel.send(`Congratulations ${message.author}! You've leveled up to level ${newLevel}!`)
+      await userModel.findOneAndUpdate({ userID: message.author.id }, { level: newLevel })
     }
 
-    if (features.xp) {
-      if (message.author.bot) return;
+    if (newXP >= xpToNextLevel) await userModel.findOneAndUpdate({ userID: message.author.id }, { xp: newXP })
+    if (debug !== 'true' && !message.content.includes('~dev')) return
 
-      const xp = Math.floor(Math.random() * 10) + 15;
-      const xpToNextLevel = Math.ceil(userData.level * 100 * 1.5);
-      const newXP = userData.xp + xp;
-      const newLevel = Math.floor(0.1 * Math.sqrt(newXP));
-      const levelDifference = newLevel - userData.level;
+    await message.channel.send({
+      content: `\`\`\`js\n`
+        + `"XP"                ${userData.xp}\n`
+        + `"XP Before"         ${userData.xp - xp}\n`
+        + `"XP After"          ${userData.xp + xp}\n`
 
-      if (newLevel > userData.level) {
-        await message.channel.send(`Congratulations ${message.author}! You've leveled up to level ${newLevel}!`);
-        await userModel.findOneAndUpdate({ userID: message.author.id }, { level: newLevel });
-      }
+        + `\n`
+        + `"Level"             ${userData.level}\n`
+        + `"Level Before"      ${userData.level - levelDifference}\n`
+        + `"Level After"       ${userData.level + levelDifference}\n`
 
-      if (newXP >= xpToNextLevel) await userModel.findOneAndUpdate({ userID: message.author.id }, { xp: newXP });
-      if (debug !== 'true' && !message.content.includes('~dev')) return;
+        + `\n`
+        + `"XP to Next Level"  ${xpToNextLevel}\n`
+        + `"XP Gained"         ${xp}\n`
+        + `\`\`\``
+    })
 
-      await message.channel.send({
-        content: `\`\`\`js\n`
-          + `"XP"                ${userData.xp}\n`
-          + `"XP Before"         ${userData.xp - xp}\n`
-          + `"XP After"          ${userData.xp + xp}\n`
+  }
 
-          + `\n`
-          + `"Level"             ${userData.level}\n`
-          + `"Level Before"      ${userData.level - levelDifference}\n`
-          + `"Level After"       ${userData.level + levelDifference}\n`
+  /**
+   * @name: Starboard
+   * @description: Handles the starboard - when a message is starred and its star count is above the threshold,
+   * it is sent to the starboard channel or updated if it already exists in the starboard channel.
+   * @param {Object} message - The message object
+   * @param {Object} targetMessage - The message object of the message that was starred
+   * @param {Object} starboardMessageData - The starboard message data object
+   * @param {String} starboardChannel - The ID of the starboard channel
+   * @param {Number} starCount - The number of stars the message has
+   * @param {Object} starboardMessage - The starboard message object
+   */
 
-          + `\n`
-          + `"XP to Next Level"  ${xpToNextLevel}\n`
-          + `"XP Gained"         ${xp}\n`
-          + `\`\`\``
+  const starboardChannel = `1034630838081552495`
+  const nerdboardChannel = `1126965560421400606`
+
+  if (features.starboard) {
+    if (!message.reference) return
+    const targetMessage = await message.channel.messages.fetch(message.reference.messageId)
+    if (!targetMessage) return
+
+    if (
+      message.content.toLowerCase().startsWith('nerd') ||
+      message.content.toLowerCase().startsWith('🤓')
+    ) await targetMessage.react('🤓')
+
+    if (message.channel.id === starboardChannel) return
+    if (message.author.bot) return
+
+    const starboardMessageData = await starboardMessageModel.findOne({ messageID: targetMessage.id })
+    const starCount = starboardMessageData ? starboardMessageData.starCount : 0
+
+    // Update the DB
+    if (!starboardMessageData) {
+      await new starboardMessageModel({
+        messageID: targetMessage.id,
+        guildID: targetMessage.guild.id,
+        channelID: targetMessage.channel.id,
+        starboardMessageID: undefined,
+        starstruck: [message.author.id]
+      }).save()
+    } else {
+      await starboardMessageModel.findOneAndUpdate({ messageID: targetMessage.id }, {
+        starboardMessageID: message.id,
+        $addToSet: { starstruck: `${message.author.id}${Math.random().toString(36).substring(7)}` }
       })
-
     }
 
-    /**
-     * @name: Starboard
-     * @description: Handles the starboard - when a message is starred and its star count is above the threshold,
-     * it is sent to the starboard channel or updated if it already exists in the starboard channel.
-     * @param {Object} message - The message object
-     * @param {Object} targetMessage - The message object of the message that was starred
-     * @param {Object} starboardMessageData - The starboard message data object
-     * @param {String} starboardChannel - The ID of the starboard channel
-     * @param {Number} starCount - The number of stars the message has
-     * @param {Object} starboardMessage - The starboard message object
-     */
+    if (starCount >= 0) {
 
-    const starboardChannel = `1034630838081552495`
-    const nerdboardChannel = `1126965560421400606`
+      const starboardMessage = await message.channel.messages.fetch(starboardMessageData.starboardMessageID)
+      let starboardEmbed = starboardMessage.embeds[0]
 
-    if (features.starboard) {
-      if (!message.reference) return
-      const targetMessage = await message.channel.messages.fetch(message.reference.messageId)
-      if (!targetMessage) return
-
-      if (
-        message.content.toLowerCase().startsWith('nerd') ||
-        message.content.toLowerCase().startsWith('🤓')
-      ) await targetMessage.react('🤓')
-
-      if (message.channel.id === starboardChannel) return
-      if (message.author.bot) return
-
-      const starboardMessageData = await starboardMessageModel.findOne({ messageID: targetMessage.id })
-      const starCount = starboardMessageData ? starboardMessageData.starCount : 0
-
-      // Update the DB
-      if (!starboardMessageData) {
-        await new starboardMessageModel({
-          messageID: targetMessage.id,
-          guildID: targetMessage.guild.id,
-          channelID: targetMessage.channel.id,
-          starboardMessageID: undefined,
-          starstruck: [message.author.id]
-        }).save()
-      } else {
-        await starboardMessageModel.findOneAndUpdate({ messageID: targetMessage.id }, {
-          starboardMessageID: message.id,
-          $addToSet: { starstruck: `${message.author.id}${Math.random().toString(36).substring(7)}` }
+      if (starboardEmbed) {
+        starboardEmbed = await new EmbedBuilder(starboardEmbed)
+        starboardEmbed.setAuthor({
+          name: `${targetMessage.author.tag} (${targetMessage.author.id})`,
+          iconURL: targetMessage.author.avatarURL
+        })
+        starboardEmbed.setDescription(targetMessage.content)
+        starboardEmbed.setFooter({
+          text: `${starCount} ⭐ | ${targetMessage.id}`
         })
       }
 
-      if (starCount >= 0) {
+      if (!starboardEmbed) {
+        starboardEmbed = await new EmbedBuilder()
+          .setAuthor(`${targetMessage.author.tag} (${targetMessage.author.id})`, targetMessage.author.avatarURL)
+          .setDescription(targetMessage.content)
+          .setFooter(`${starCount} ⭐ | ${targetMessage.id}`)
+      }
 
-        const starboardMessage = await message.channel.messages.fetch(starboardMessageData.starboardMessageID)
-        let starboardEmbed = starboardMessage.embeds[0]
+      if (starboardMessage) {
+        starboardMessage.edit({
+          embeds: [starboardEmbed]
+        })
+      }
 
-        if (starboardEmbed) {
-          starboardEmbed = await new EmbedBuilder(starboardEmbed)
-          starboardEmbed.setAuthor({
-            name: `${targetMessage.author.tag} (${targetMessage.author.id})`,
-            iconURL: targetMessage.author.avatarURL
-          })
-          starboardEmbed.setDescription(targetMessage.content)
-          starboardEmbed.setFooter({
-            text: `${starCount} ⭐ | ${targetMessage.id}`
-          })
-        }
+      if (!starboardMessage) {
+        const sentMessage = await client.channels.cache.get(starboardChannel).send({
+          embeds: [starboardEmbed]
+        })
 
-        if (!starboardEmbed) {
-          starboardEmbed = await new EmbedBuilder()
-            .setAuthor(`${targetMessage.author.tag} (${targetMessage.author.id})`, targetMessage.author.avatarURL)
-            .setDescription(targetMessage.content)
-            .setFooter(`${starCount} ⭐ | ${targetMessage.id}`)
-        }
-
-        if (starboardMessage) {
-          starboardMessage.edit({
-            embeds: [starboardEmbed]
-          })
-        }
-
-        if (!starboardMessage) {
-          const sentMessage = await client.channels.cache.get(starboardChannel).send({
-            embeds: [starboardEmbed]
-          })
-
-          await new starboardMessageModel({
-            messageID: targetMessage.id,
-            starboardMessageID: sentMessage.id,
-            starCount: starCount
-          }).save()
-        }
+        await new starboardMessageModel({
+          messageID: targetMessage.id,
+          starboardMessageID: sentMessage.id,
+          starCount: starCount
+        }).save()
       }
     }
-
   }
-)
+})
+
+// Automatically update the bot every X minutes
+function automaticUpdate() {
+
+  startTime = Date.now();
+
+  console.log(`${chalk.green('[Automatic Update]')} Checking for updates...`);
+
+  exec('git fetch', (err, stdout, stderr) => {
+    if (err) {
+      console.error(`${chalk.red('[Automatic Update]')} [${Date.now() - startTime}ms] Error while fetching:`, err);
+      console.log();
+      return;
+    }
+
+    exec('git rev-list HEAD...origin/main --count', (err, stdout, stderr) => {
+      if (err) {
+        console.error(`${chalk.red('[Automatic Update]')} [${Date.now() - startTime}ms] Error while checking for new commits:`, err);
+        console.log();
+        return;
+      }
+
+      const newCommits = parseInt(stdout);
+      if (newCommits > 0) {
+        console.log(`${chalk.green('[Automatic Update]')} [${Date.now() - startTime}ms] ${newCommits} new commits found. Updating bot...`);
+        exec('git pull && npm install', (err, stdout, stderr) => {
+          if (err) {
+            console.error(`${chalk.red('[Automatic Update]')} [${Date.now() - startTime}ms] Error while updating bot:`, err);
+            console.log();
+            return;
+          }
+
+          console.log(`${chalk.green('[Automatic Update]')} [${Date.now() - startTime}ms] Bot updated successfully. Restarting bot...`);
+          // Restart the bot using pm2
+          exec('pm2 restart main', (err, stdout, stderr) => {
+            if (err) {
+              console.error(`${chalk.red('[Automatic Update]')} [${Date.now() - startTime}ms] Error while restarting bot:`, err);
+              console.log();
+              return;
+            }
+            console.log(`${chalk.green('[Automatic Update]')} [${Date.now() - startTime}ms] Bot restarted successfully.`);
+            console.log();
+          });
+        });
+      } else {
+        console.log(`${chalk.green('[Automatic Update]')} [${Date.now() - startTime}ms] No new commits found.`);
+        console.log();
+      }
+    });
+  });
+}
+
+// Schedule the automatic update to run every minute
+cron.schedule('*/1 * * * *', () => {
+  automaticUpdate()
+})
