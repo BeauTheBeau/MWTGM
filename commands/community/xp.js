@@ -67,6 +67,7 @@ module.exports = {
       let rank = usersToSkip + 1
 
       for (const user of users) {
+        if (user.xp === 0) continue
         leaderboard += `${rank}. **<@${user.userID}>** - ${user.xp} XP\n`
         rank++
       }
