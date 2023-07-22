@@ -202,7 +202,6 @@ client.on(Events.MessageCreate, async (message) => {
     }
 
     if (starCount >= 0) {
-
       const starboardMessage = await message.channel.messages.fetch(starboardMessageData.starboardMessageID)
       let starboardEmbed = starboardMessage.embeds[0]
 
@@ -279,7 +278,7 @@ function automaticUpdate() {
 
           console.log(`${chalk.green('[Automatic Update]')} [${Date.now() - startTime}ms] Bot updated successfully. Restarting bot...`);
           // Restart the bot using pm2
-          exec('pm2 restart main', (err, stdout, stderr) => {
+          exec('pm2 restart "npm run main"', (err, stdout, stderr) => {
             if (err) {
               console.error(`${chalk.red('[Automatic Update]')} [${Date.now() - startTime}ms] Error while restarting bot:`, err);
               console.log();
