@@ -22,6 +22,7 @@
     "node-cron": "^3.0.2",
     "node-fetch": "^3.2.6",
     "semver": "^7.5.4",
-    "unsplash-js": "^7.0.18"
+    "unsplash-js": "^7.0.18",
+    "pm2": "^5.1.0"
   }
 }
