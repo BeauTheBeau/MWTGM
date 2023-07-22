@@ -45,7 +45,7 @@ async function addMoney (userID, amount, bank = false) {
  * @throws {Error} - If the user does not have enough money
  */
 
-async function removeMoney (userID, amount, bank = false
+async function removeMoney (userID, amount, bank = false ) {
 
     try {
       const user = await userModel.findOneAndUpdate(
