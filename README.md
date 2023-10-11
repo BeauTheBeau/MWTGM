@@ -1,3 +1,12 @@
+
+---
+
+# DISCONTINUED
+This project is now (11/10/23) discontinued. 
+
+---
+
+
 # MWT GameNights Bot
 
 This is a Discord bot for the MWT GameNights server.
